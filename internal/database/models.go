@@ -6,28 +6,20 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-type Answer struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Body        string
-	QuestionsID uuid.UUID
-	ResponseID  uuid.UUID
-}
 
 type Poll struct {
 	ID          uuid.UUID
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Title       string
+	Config      json.RawMessage
 	QuestionsID uuid.UUID
-	IsPublic    bool
-	Expiration  sql.NullTime
+	UserID      uuid.UUID
 }
 
 type Question struct {
@@ -35,17 +27,18 @@ type Question struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Title     string
+	Questions json.RawMessage
 	PollsID   uuid.UUID
-	AnswerID  uuid.UUID
 }
 
 type Response struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Response  string
-	AnswerID  uuid.UUID
-	VoterID   uuid.UUID
+	ID          uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Response    json.RawMessage
+	QuestionsID uuid.UUID
+	VoterID     uuid.UUID
+	PollsID     uuid.UUID
 }
 
 type User struct {

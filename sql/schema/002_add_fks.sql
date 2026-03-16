@@ -16,10 +16,10 @@ ALTER TABLE polls
 DROP COLUMN questions_id,
 DROP COLUMN user_id;
 
-ALTER TABLE polls
+ALTER TABLE questions
 DROP COLUMN polls_id;
 
-ALTER TABLE polls
+ALTER TABLE responses
 DROP COLUMN questions_id,
 DROP COLUMN voter_id,
 DROP COLUMN polls_id;
