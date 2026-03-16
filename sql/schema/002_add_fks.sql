@@ -1,0 +1,29 @@
+-- +goose Up
+ALTER TABLE polls
+ADD COLUMN questions_id UUID NOT NULL REFERENCES questions(id),
+ADD COLUMN user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE questions
+ADD COLUMN polls_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE;
+
+ALTER TABLE responses
+ADD COLUMN questions_id UUID NOT NULL REFERENCES questions(id)ON DELETE CASCADE,
+ADD COLUMN voter_id UUID NOT NULL REFERENCES voter(id) ON DELETE CASCADE,
+ADD COLUMN polls_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE;
+
+-- +goose Down
+ALTER TABLE polls
+DROP COLUMN questions_id,
+DROP COLUMN user_id;
+
+ALTER TABLE polls
+DROP COLUMN polls_id;
+
+ALTER TABLE polls
+DROP COLUMN questions_id,
+DROP COLUMN voter_id,
+DROP COLUMN polls_id;
+
+
+
+
