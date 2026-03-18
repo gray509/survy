@@ -7,6 +7,9 @@ package database
 
 import (
 	"context"
+	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -18,7 +21,7 @@ VALUES (
     $1,
     $2
 )
-RETURNING id, created_at, updated_at, email, password
+RETURNING id, created_at, updated_at, email, password, refresh_token
 `
 
 type CreateUserParams struct {
@@ -35,6 +38,51 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Email,
 		&i.Password,
+		&i.RefreshToken,
 	)
 	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, created_at, updated_at, email, password, refresh_token FROM users
+WHERE email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.Password,
+		&i.RefreshToken,
+	)
+	return i, err
+}
+
+const resetAllUsers = `-- name: ResetAllUsers :exec
+DELETE FROM users
+`
+
+func (q *Queries) ResetAllUsers(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, resetAllUsers)
+	return err
+}
+
+const setRefreshTokenById = `-- name: SetRefreshTokenById :exec
+UPDATE users
+SET updated_at = NOW(), refresh_token = $1
+WHERE id = $2
+`
+
+type SetRefreshTokenByIdParams struct {
+	RefreshToken sql.NullString
+	ID           uuid.UUID
+}
+
+func (q *Queries) SetRefreshTokenById(ctx context.Context, arg SetRefreshTokenByIdParams) error {
+	_, err := q.db.ExecContext(ctx, setRefreshTokenById, arg.RefreshToken, arg.ID)
+	return err
 }

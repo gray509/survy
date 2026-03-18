@@ -8,3 +8,15 @@ VALUES (
     $2
 )
 RETURNING *;
+
+-- name: ResetAllUsers :exec
+DELETE FROM users;
+
+-- name: GetUserByEmail :one
+SELECT * FROM users
+WHERE email = $1;
+
+-- name: SetRefreshTokenById :exec
+UPDATE users
+SET updated_at = NOW(), refresh_token = $1
+WHERE id = $2;

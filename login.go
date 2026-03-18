@@ -1,0 +1,73 @@
+package main
+
+import (
+	"database/sql"
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"github.com/gray509/polls/internal/auth"
+	"github.com/gray509/polls/internal/database"
+)
+
+func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
+	type r_email_pass struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	type response struct {
+		User
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	emailPass := r_email_pass{}
+	err := decoder.Decode(&emailPass)
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "Couldn't decode rquest Json", err)
+		return
+	}
+
+	//GET USER FROM DB
+	user, err := cfg.db.GetUserByEmail(r.Context(), emailPass.Email)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		return
+	}
+
+	match, err := auth.CheckPasswordHash(emailPass.Password, user.Password)
+	if err != nil || !match {
+		resWithErr(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		return
+	}
+
+	accessToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "Could't make access token", err)
+	}
+
+	refreshToken := auth.MakeRefreshToken()
+
+	err = cfg.db.SetRefreshTokenById(r.Context(), database.SetRefreshTokenByIdParams{
+		RefreshToken: sql.NullString{
+			String: refreshToken,
+			Valid:  true,
+		},
+		ID: user.ID})
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "Could't save refresh token", err)
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
+		User: User{
+			ID:        user.ID,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+			Email:     user.Email,
+		},
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
+}
