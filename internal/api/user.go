@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
-func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	type r_email_pass struct {
 		Email    string `json:"email"`
@@ -29,7 +29,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 
 	err := decoder.Decode(&emailPass)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't decode rquest Json", err)
+		resWithErr(w, http.StatusInternalServerError, "Couldn't decode request Json", err)
 		return
 	}
 
@@ -45,7 +45,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, User{
+	respondWithJSON(w, http.StatusCreated, User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,

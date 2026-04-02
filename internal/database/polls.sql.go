@@ -13,42 +13,27 @@ import (
 )
 
 const createPoll = `-- name: CreatePoll :one
-INSERT INTO polls (id, created_at, updated_at, title, questions_id, user_id, config)
+INSERT INTO polls (id, created_at, updated_at, title, user_id, config)
 VALUES (
     gen_random_uuid(),
     NOW(),
     NOW(),
     $1,
     $2,
-    $3,
-    $4
+    $3
 )
-RETURNING id, created_at, updated_at, title, config, questions_id, user_id
+RETURNING id
 `
 
 type CreatePollParams struct {
-	Title       string
-	QuestionsID uuid.UUID
-	UserID      uuid.UUID
-	Config      json.RawMessage
+	Title  string
+	UserID uuid.UUID
+	Config json.RawMessage
 }
 
-func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (Poll, error) {
-	row := q.db.QueryRowContext(ctx, createPoll,
-		arg.Title,
-		arg.QuestionsID,
-		arg.UserID,
-		arg.Config,
-	)
-	var i Poll
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Title,
-		&i.Config,
-		&i.QuestionsID,
-		&i.UserID,
-	)
-	return i, err
+func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createPoll, arg.Title, arg.UserID, arg.Config)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
 }

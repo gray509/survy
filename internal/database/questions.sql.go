@@ -13,34 +13,75 @@ import (
 )
 
 const createQuestion = `-- name: CreateQuestion :one
-INSERT INTO questions (id, created_at, updated_at, title, polls_id, questions)
+INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,polls_id, options)
 VALUES (
     gen_random_uuid(),
     NOW(),
     NOW(),
     $1,
     $2,
-    $3
+    $3,
+    $4,
+    $5
 )
-RETURNING id, created_at, updated_at, title, questions, polls_id
+RETURNING id
 `
 
 type CreateQuestionParams struct {
-	Title     string
-	PollsID   uuid.UUID
-	Questions json.RawMessage
+	Title      string
+	Types      string
+	IsRequired bool
+	PollsID    uuid.UUID
+	Options    json.RawMessage
 }
 
-func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (Question, error) {
-	row := q.db.QueryRowContext(ctx, createQuestion, arg.Title, arg.PollsID, arg.Questions)
-	var i Question
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Title,
-		&i.Questions,
-		&i.PollsID,
+func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createQuestion,
+		arg.Title,
+		arg.Types,
+		arg.IsRequired,
+		arg.PollsID,
+		arg.Options,
 	)
-	return i, err
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getQuestionsWithPollid = `-- name: GetQuestionsWithPollid :many
+select id, created_at, updated_at, title, options, is_required, types, polls_id 
+from questions 
+where polls_id = $1
+`
+
+func (q *Queries) GetQuestionsWithPollid(ctx context.Context, pollsID uuid.UUID) ([]Question, error) {
+	rows, err := q.db.QueryContext(ctx, getQuestionsWithPollid, pollsID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Question
+	for rows.Next() {
+		var i Question
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Options,
+			&i.IsRequired,
+			&i.Types,
+			&i.PollsID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

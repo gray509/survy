@@ -13,7 +13,6 @@ CREATE TABLE polls(
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     title TEXT NOT NULL,
-    --questions_id UUID NOT NULL REFERENCES questions(id),
     --user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     config JSONB NOT NULL
 );
@@ -24,7 +23,9 @@ CREATE TABLE questions(
     updated_at TIMESTAMP NOT NULL,
     title TEXT NOT NULL,
     --polls_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
-    questions JSONB NOT NULL
+    options JSONB NOT NULL,
+    is_required BOOLEAN NOT NUll,
+    types TEXT NOT NULL
 );
 
 CREATE TABLE responses(

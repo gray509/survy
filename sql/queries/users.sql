@@ -20,3 +20,10 @@ WHERE email = $1;
 UPDATE users
 SET updated_at = NOW(), refresh_token = $1
 WHERE id = $2;
+
+-- name: UserExit :one
+SELECT EXISTS (
+  SELECT 1
+  FROM users
+  WHERE id = $1
+);

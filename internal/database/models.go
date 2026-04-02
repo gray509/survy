@@ -13,22 +13,23 @@ import (
 )
 
 type Poll struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Title       string
-	Config      json.RawMessage
-	QuestionsID uuid.UUID
-	UserID      uuid.UUID
-}
-
-type Question struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Title     string
-	Questions json.RawMessage
-	PollsID   uuid.UUID
+	Config    json.RawMessage
+	UserID    uuid.UUID
+}
+
+type Question struct {
+	ID         uuid.UUID
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	Title      string
+	Options    json.RawMessage
+	IsRequired bool
+	Types      string
+	PollsID    uuid.UUID
 }
 
 type Response struct {

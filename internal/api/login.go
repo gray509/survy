@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 	"github.com/gray509/polls/internal/database"
 )
 
-func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	type r_email_pass struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`

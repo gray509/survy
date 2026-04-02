@@ -86,3 +86,18 @@ func (q *Queries) SetRefreshTokenById(ctx context.Context, arg SetRefreshTokenBy
 	_, err := q.db.ExecContext(ctx, setRefreshTokenById, arg.RefreshToken, arg.ID)
 	return err
 }
+
+const userExit = `-- name: UserExit :one
+SELECT EXISTS (
+  SELECT 1
+  FROM users
+  WHERE id = $1
+)
+`
+
+func (q *Queries) UserExit(ctx context.Context, id uuid.UUID) (bool, error) {
+	row := q.db.QueryRowContext(ctx, userExit, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}

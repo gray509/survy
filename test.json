@@ -1,0 +1,60 @@
+{
+   "client_create_poll": {
+    "user_id": "string",
+	"title": "this is the title",
+	"config": {
+		"expiration_time": "string",
+		"identified": true,
+		"max_response": 30
+	},
+	"questions": [
+		{
+			"title": "multiple",
+			"types" : "multi-choice",
+			"required": true,
+			"options": {
+				"answers" :["1","2","3"]
+			}
+		},
+		{
+			"title": "single",
+			"types" : "single-choice",
+			"required": true,
+			"options": {
+				"answers" :["4","5","6"]
+			}
+
+		},
+		{
+			"title": "rating",
+			"types" : "rating",
+			"required": true,
+			"options": {
+				"answers" :["0","10"]
+			}
+		},
+		{
+			"title": "yes/no",
+			"types" : "yes/no",
+			"required": true
+		},
+		{
+			"title": "ranking",
+			"types" : "ranking",
+			"required": true,
+			"options": {
+				"answers" :["7", "3", "7"]
+			}
+		},
+		{
+			"title": "open Text",
+			"types" : "open",
+			"required": true
+		}
+	]
+   },
+   "create_user":{
+		"email" : "user@test.com",
+		"password": "THISTESTUSERPASSWORD"
+   }
+}
