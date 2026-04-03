@@ -23,7 +23,7 @@ CREATE TABLE questions(
     updated_at TIMESTAMP NOT NULL,
     title TEXT NOT NULL,
     --polls_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
-    options JSONB NOT NULL,
+    options JSONB DEFAULT '{}'::jsonb,
     is_required BOOLEAN NOT NUll,
     types TEXT NOT NULL
 );

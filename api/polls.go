@@ -78,7 +78,7 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 			Options:    options,
 		})
 		if err != nil {
-			resWithErr(w, http.StatusInternalServerError, "Couldn't parse uuid", err)
+			resWithErr(w, http.StatusInternalServerError, "Couldn't create quetions table", err)
 			return
 		}
 	}

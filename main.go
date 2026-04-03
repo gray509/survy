@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gray509/polls/internal/api"
+	"github.com/gray509/polls/api"
 	"github.com/gray509/polls/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"

@@ -2,7 +2,11 @@ package api
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -10,6 +14,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gray509/polls/internal/database"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type testJson struct {
@@ -58,6 +65,64 @@ func checkingExpectedStatusCode(statusCode int, respBody []byte, expectedCode in
 		t.Fatalf("expected status %d, got %d, with err message %s", expectedCode, statusCode, respErr.Error)
 	}
 }
+
+func createTestUser() (string, error) {
+	type createUser struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	email := "_@test.com"
+	pass := "thisapassword"
+	jsonBody := createUser{
+		Email:    email,
+		Password: pass,
+	}
+	body, err := json.Marshal(jsonBody)
+	if err != nil {
+		return "", err
+	}
+
+	//setting request
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/signup", bytes.NewBuffer(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	//sending resquest
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// processing response
+	respBody, err := io.ReadAll(resp.Body)
+	type User struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+	var respUser User
+	if err = json.Unmarshal(respBody, &respUser); err != nil {
+		return "", err
+	}
+
+	return respUser.ID.String(), nil
+}
+
+func getQueries() (*database.Queries, error) {
+	godotenv.Load(".env.test")
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		return nil, err
+	}
+	return database.New(db), nil
+}
+
 func TestUserCreation(t *testing.T) {
 	type createUser struct {
 		Email    string `json:"email"`
@@ -121,6 +186,11 @@ func TestPollsCreation(t *testing.T) {
 	if err = json.Unmarshal(data, &requestEx); err != nil {
 		t.Error(err)
 	}
+	userId, err := createTestUser()
+	if err != nil {
+		t.Error(err, errors.New("could created new test user for its uuid"))
+	}
+	requestEx.ClientCreatePoll.UserID = userId
 	body, err := json.Marshal(requestEx.ClientCreatePoll)
 	if err != nil {
 		t.Error(err)
@@ -157,6 +227,34 @@ func TestPollsCreation(t *testing.T) {
 	var pollid response
 	if err := json.Unmarshal(respBody, &pollid); err != nil {
 		t.Fatal(err)
+	}
+
+	if pollid.Pollid == "" {
+		t.Fail()
+	}
+
+	q, err := getQueries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	pollID, err := uuid.Parse(pollid.Pollid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	questions, err := q.GetQuestionsWithPollid(ctx, pollID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(questions) != 6 {
+		t.Fatal()
+	}
+	for _, question := range questions {
+		fmt.Printf("Title: %s\n", question.Title)
+		fmt.Printf("Types: %s\n", question.Types)
+		fmt.Printf("Title: %t\n", question.IsRequired)
 	}
 
 }
