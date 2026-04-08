@@ -1,15 +1,15 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gray509/polls/api"
 	"github.com/gray509/polls/internal/database"
+	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	platform := os.Getenv("PLATFORM")
 	jwtSecret := os.Getenv("JWT_SECRET")
 
-	db, err := sql.Open("postgres", dbURL)
+	db, err := pgx.Connect(context.Background(), dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,11 +3,11 @@ package api
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -15,8 +15,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gray509/polls/internal/database"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 )
 
 type testJson struct {
@@ -100,10 +101,10 @@ func createTestUser() (string, error) {
 	// processing response
 	respBody, err := io.ReadAll(resp.Body)
 	type User struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
+		ID        uuid.UUID        `json:"id"`
+		CreatedAt pgtype.Timestamp `json:"created_at"`
+		UpdatedAt pgtype.Timestamp `json:"updated_at"`
+		Email     string           `json:"email"`
 	}
 	var respUser User
 	if err = json.Unmarshal(respBody, &respUser); err != nil {
@@ -116,9 +117,9 @@ func createTestUser() (string, error) {
 func getQueries() (*database.Queries, error) {
 	godotenv.Load(".env.test")
 	dbURL := os.Getenv("DB_URL")
-	db, err := sql.Open("postgres", dbURL)
+	db, err := pgx.Connect(context.Background(), dbURL)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 	return database.New(db), nil
 }
@@ -160,10 +161,10 @@ func TestUserCreation(t *testing.T) {
 	checkingExpectedStatusCode(resp.StatusCode, respBody, http.StatusCreated, t)
 
 	type User struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
+		ID        uuid.UUID        `json:"id"`
+		CreatedAt pgtype.Timestamp `json:"created_at"`
+		UpdatedAt pgtype.Timestamp `json:"updated_at"`
+		Email     string           `json:"email"`
 	}
 	var respUser User
 

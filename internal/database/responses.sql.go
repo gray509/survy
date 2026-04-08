@@ -34,7 +34,7 @@ type CreateResponseParams struct {
 }
 
 func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) (Response, error) {
-	row := q.db.QueryRowContext(ctx, createResponse,
+	row := q.db.QueryRow(ctx, createResponse,
 		arg.Response,
 		arg.PollsID,
 		arg.QuestionsID,

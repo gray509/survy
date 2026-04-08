@@ -7,9 +7,9 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -30,7 +30,7 @@ type CreateUserParams struct {
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.Password)
+	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Password)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -49,7 +49,7 @@ WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -67,7 +67,7 @@ DELETE FROM users
 `
 
 func (q *Queries) ResetAllUsers(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, resetAllUsers)
+	_, err := q.db.Exec(ctx, resetAllUsers)
 	return err
 }
 
@@ -78,12 +78,12 @@ WHERE id = $2
 `
 
 type SetRefreshTokenByIdParams struct {
-	RefreshToken sql.NullString
+	RefreshToken pgtype.Text
 	ID           uuid.UUID
 }
 
 func (q *Queries) SetRefreshTokenById(ctx context.Context, arg SetRefreshTokenByIdParams) error {
-	_, err := q.db.ExecContext(ctx, setRefreshTokenById, arg.RefreshToken, arg.ID)
+	_, err := q.db.Exec(ctx, setRefreshTokenById, arg.RefreshToken, arg.ID)
 	return err
 }
 
@@ -96,7 +96,7 @@ SELECT EXISTS (
 `
 
 func (q *Queries) UserExit(ctx context.Context, id uuid.UUID) (bool, error) {
-	row := q.db.QueryRowContext(ctx, userExit, id)
+	row := q.db.QueryRow(ctx, userExit, id)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

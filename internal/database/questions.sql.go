@@ -32,11 +32,11 @@ type CreateQuestionParams struct {
 	Types      string
 	IsRequired bool
 	PollsID    uuid.UUID
-	Options    json.RawMessage
+	Options    *json.RawMessage
 }
 
 func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, createQuestion,
+	row := q.db.QueryRow(ctx, createQuestion,
 		arg.Title,
 		arg.Types,
 		arg.IsRequired,
@@ -55,7 +55,7 @@ where polls_id = $1
 `
 
 func (q *Queries) GetQuestionsWithPollid(ctx context.Context, pollsID uuid.UUID) ([]Question, error) {
-	rows, err := q.db.QueryContext(ctx, getQuestionsWithPollid, pollsID)
+	rows, err := q.db.Query(ctx, getQuestionsWithPollid, pollsID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,9 +76,6 @@ func (q *Queries) GetQuestionsWithPollid(ctx context.Context, pollsID uuid.UUID)
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

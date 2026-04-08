@@ -5,17 +5,16 @@
 package database
 
 import (
-	"database/sql"
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Poll struct {
 	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 	Title     string
 	Config    json.RawMessage
 	UserID    uuid.UUID
@@ -23,10 +22,10 @@ type Poll struct {
 
 type Question struct {
 	ID         uuid.UUID
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
 	Title      string
-	Options    json.RawMessage
+	Options    *json.RawMessage
 	IsRequired bool
 	Types      string
 	PollsID    uuid.UUID
@@ -34,8 +33,8 @@ type Question struct {
 
 type Response struct {
 	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
 	Response    json.RawMessage
 	QuestionsID uuid.UUID
 	VoterID     uuid.UUID
@@ -44,17 +43,17 @@ type Response struct {
 
 type User struct {
 	ID           uuid.UUID
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	CreatedAt    pgtype.Timestamp
+	UpdatedAt    pgtype.Timestamp
 	Email        string
 	Password     string
-	RefreshToken sql.NullString
+	RefreshToken pgtype.Text
 }
 
 type Voter struct {
 	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Ip        sql.NullString
-	Hash      sql.NullString
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+	Ip        pgtype.Text
+	Hash      pgtype.Text
 }

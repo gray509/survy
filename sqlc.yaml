@@ -1,8 +1,58 @@
 version: "2"
+
 sql:
   - schema: "sql/schema"
     queries: "sql/queries"
     engine: "postgresql"
+
     gen:
       go:
-        out: "internal/database" 
+        out: "internal/database"
+        package: "database"
+        sql_package: "pgx/v5"
+
+        overrides:
+          # UUID (non-nullable)
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
+
+          # # UUID (nullable)
+          # - db_type: "uuid"
+          #   nullable: true
+          #   go_type: "*github.com/google/uuid.UUID"
+
+          # JSONB (non-nullable)
+          - db_type: "jsonb"
+            go_type: "encoding/json.RawMessage"
+
+          # JSONB (nullable)
+          - db_type: "jsonb"
+            nullable: true
+            go_type: "*encoding/json.RawMessage"
+
+          # # TIMESTAMP (non-nullable)
+          # - db_type: "timestamp"
+          #   go_type: "time.Time"
+
+          # # TIMESTAMP (nullable)
+          # - db_type: "timestamp"
+          #   nullable: true
+          # #   go_type: "*time.Time"
+
+          # # TIMESTAMPTZ (non-nullable)
+          # - db_type: "timestamptz"
+          #   go_type: "time.Time"
+
+          # # # TIMESTAMPTZ (nullable)
+          # # - db_type: "timestamptz"
+          # #   nullable: true
+          # #   go_type: "*time.Time"
+
+          # # DATE (non-nullable)
+          # - db_type: "date"
+          #   go_type: "time.Time"
+
+          # # # DATE (nullable)
+          # # - db_type: "date"
+          # #   nullable: true
+          # #   go_type: "*time.Time"

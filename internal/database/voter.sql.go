@@ -7,7 +7,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createVoter = `-- name: CreateVoter :one
@@ -23,12 +24,12 @@ RETURNING id, created_at, updated_at, ip, hash
 `
 
 type CreateVoterParams struct {
-	Ip   sql.NullString
-	Hash sql.NullString
+	Ip   pgtype.Text
+	Hash pgtype.Text
 }
 
 func (q *Queries) CreateVoter(ctx context.Context, arg CreateVoterParams) (Voter, error) {
-	row := q.db.QueryRowContext(ctx, createVoter, arg.Ip, arg.Hash)
+	row := q.db.QueryRow(ctx, createVoter, arg.Ip, arg.Hash)
 	var i Voter
 	err := row.Scan(
 		&i.ID,

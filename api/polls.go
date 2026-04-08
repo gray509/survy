@@ -49,7 +49,6 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		resWithErr(w, http.StatusInternalServerError, "Couldn't parse uuid", err)
 		return
 	}
-
 	pollId, err := cfg.db.CreatePoll(r.Context(), database.CreatePollParams{
 		Title:  params.Title,
 		UserID: userId,
@@ -57,10 +56,11 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	})
 
 	for _, q := range params.Questions {
-		var options []byte
+		var options *json.RawMessage
 		switch q.Types {
 		case MultiChoice, SingleChoice, Rating, Ranking:
-			options, err = json.Marshal(q.Options)
+			rawJson, err := json.Marshal(q.Options)
+			options = (*json.RawMessage)(&rawJson)
 			if err != nil {
 				resWithErr(w, http.StatusInternalServerError, "Couldn't marshal options", err)
 				return

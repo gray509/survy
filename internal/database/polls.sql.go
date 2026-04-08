@@ -32,7 +32,7 @@ type CreatePollParams struct {
 }
 
 func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, createPoll, arg.Title, arg.UserID, arg.Config)
+	row := q.db.QueryRow(ctx, createPoll, arg.Title, arg.UserID, arg.Config)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err

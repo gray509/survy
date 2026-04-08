@@ -1,13 +1,13 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/gray509/polls/internal/auth"
 	"github.com/gray509/polls/internal/database"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	refreshToken := auth.MakeRefreshToken()
 
 	err = cfg.db.SetRefreshTokenById(r.Context(), database.SetRefreshTokenByIdParams{
-		RefreshToken: sql.NullString{
+		RefreshToken: pgtype.Text{
 			String: refreshToken,
 			Valid:  true,
 		},
