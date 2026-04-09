@@ -1,6 +1,5 @@
 {
    "client_create_poll": {
-    "user_id": "string",
 	"title": "this is the title",
 	"config": {
 		"expiration_time": "string",

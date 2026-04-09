@@ -19,6 +19,7 @@ type User struct {
 	Email     string             `json:"email"`
 }
 
+// "POST /v0/signup"
 func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 	type r_email_pass struct {
 		Email    string `json:"email"`
@@ -40,10 +41,11 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
+	timestamptz := querieutils.Time(&now)
 	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
 		ID:        uuid.New(),
-		CreatedAt: querieutils.Time(&now),
-		UpdatedAt: querieutils.Time(&now),
+		CreatedAt: timestamptz,
+		UpdatedAt: timestamptz,
 		Email:     emailPass.Email,
 		Password:  hashPass})
 
@@ -54,8 +56,8 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusCreated, User{
 		ID:        user.ID,
-		CreatedAt: querieutils.Time(&now),
-		UpdatedAt: querieutils.Time(&now),
+		CreatedAt: timestamptz,
+		UpdatedAt: timestamptz,
 		Email:     user.Email,
 	})
 

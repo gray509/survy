@@ -7,6 +7,7 @@ import (
 	"github.com/gray509/polls/internal/auth"
 )
 
+// "POST /v0/refresh"
 func (cfg *apiConfig) Refresh(w http.ResponseWriter, r *http.Request) {
 	client_refresh_token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
@@ -30,6 +31,7 @@ func (cfg *apiConfig) Refresh(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, accessToken)
 }
 
+// "POST /v0/revoke"
 func (cfg *apiConfig) Revoke(w http.ResponseWriter, r *http.Request) {
 
 	client_refresh_token, err := auth.GetBearerToken(r.Header)

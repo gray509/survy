@@ -32,7 +32,7 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-		Pollid string `json:"poll_id"`
+		Pollid uuid.UUID `json:"poll_id"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -62,10 +62,11 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
+	timestamptz := querieutils.Time(&now)
 	pollId, err := cfg.db.CreatePoll(r.Context(), database.CreatePollParams{
 		ID:        uuid.New(),
-		CreatedAt: querieutils.Time(&now),
-		UpdatedAt: querieutils.Time(&now),
+		CreatedAt: timestamptz,
+		UpdatedAt: timestamptz,
 		Title:     params.Title,
 		UserID:    userId,
 		Config:    config,
@@ -93,8 +94,8 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		}
 		questions = append(questions, database.QuestionsBulkInsertParams{
 			ID:         uuid.New(),
-			CreatedAt:  querieutils.Time(&now),
-			UpdatedAt:  querieutils.Time(&now),
+			CreatedAt:  timestamptz,
+			UpdatedAt:  timestamptz,
 			Title:      q.Title,
 			Types:      q.Types,
 			IsRequired: q.Required,
@@ -110,6 +111,6 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, response{
-		Pollid: pollId.String(),
+		Pollid: pollId,
 	})
 }

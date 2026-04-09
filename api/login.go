@@ -11,6 +11,7 @@ import (
 	"github.com/gray509/polls/internal/querieutils"
 )
 
+// "POST /v0/login"
 func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	type r_email_pass struct {
 		Email    string `json:"email"`

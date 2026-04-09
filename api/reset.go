@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// "POST /admin/reset"
 func (cfg *apiConfig) Reset(w http.ResponseWriter, r *http.Request) {
 	if cfg.platform != "dev" {
 		w.WriteHeader(http.StatusForbidden)
@@ -16,5 +17,6 @@ func (cfg *apiConfig) Reset(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	log.Println("Success users deleted")
-
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText((http.StatusOK))))
 }

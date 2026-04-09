@@ -26,12 +26,15 @@ func main() {
 	apicfg := api.NewConfig(database.New(db), port, platform, jwtSecret)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /v0/signup", apicfg.CreateUser)
+
+	mux.HandleFunc("POST /admin/reset", apicfg.Reset)
+
 	mux.HandleFunc("POST /v0/login", apicfg.Login)
-	mux.HandleFunc("POST /v0/reset", apicfg.Reset)
-	mux.HandleFunc("POST /v0/poll", apicfg.CreatePoll)
 	mux.HandleFunc("POST /v0/refresh", apicfg.Refresh)
 	mux.HandleFunc("POST /v0/revoke", apicfg.Revoke)
+
+	mux.HandleFunc("POST /v0/signup", apicfg.CreateUser)
+	mux.HandleFunc("POST /v0/poll", apicfg.CreatePoll)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
