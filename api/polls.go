@@ -1,17 +1,20 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/gray509/polls/internal/auth"
 	"github.com/gray509/polls/internal/database"
+	"github.com/gray509/polls/internal/querieutils"
 )
 
 func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		UserID string `json:"user_id"`
 		Title  string `json:"title"`
 		Config struct {
 			ExpirationTime string `json:"expiration_time"`
@@ -39,48 +42,71 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		resWithErr(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
 	}
+
+	// authorization
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error getting header jwt token", err)
+		return
+	}
+	userId, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error validating token", err)
+		return
+	}
+
+	// proocessing to db
 	config, err := json.Marshal(params.Config)
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "Couldn't marshall config", err)
 		return
 	}
-	userId, err := uuid.Parse(params.UserID)
+	now := time.Now()
+	pollId, err := cfg.db.CreatePoll(r.Context(), database.CreatePollParams{
+		ID:        uuid.New(),
+		CreatedAt: querieutils.Time(&now),
+		UpdatedAt: querieutils.Time(&now),
+		Title:     params.Title,
+		UserID:    userId,
+		Config:    config,
+	})
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't parse uuid", err)
+		resWithErr(w, http.StatusInternalServerError, "couldn't save poll to db", err)
 		return
 	}
-	pollId, err := cfg.db.CreatePoll(r.Context(), database.CreatePollParams{
-		Title:  params.Title,
-		UserID: userId,
-		Config: config,
-	})
-
+	questions := make([]database.QuestionsBulkInsertParams, 0)
 	for _, q := range params.Questions {
 		var options *json.RawMessage
 		switch q.Types {
 		case MultiChoice, SingleChoice, Rating, Ranking:
 			rawJson, err := json.Marshal(q.Options)
-			options = (*json.RawMessage)(&rawJson)
 			if err != nil {
 				resWithErr(w, http.StatusInternalServerError, "Couldn't marshal options", err)
 				return
 			}
+			options = (*json.RawMessage)(&rawJson)
+
 		case YesNo, OpenText:
 			// keeps options nil
 		default:
 			resWithErr(w, http.StatusBadRequest, "Couldn't recognize question type", fmt.Errorf("unknown question type: %v", q.Types))
 		}
-		_, err = cfg.db.CreateQuestion(r.Context(), database.CreateQuestionParams{
+		questions = append(questions, database.QuestionsBulkInsertParams{
+			ID:         uuid.New(),
+			CreatedAt:  querieutils.Time(&now),
+			UpdatedAt:  querieutils.Time(&now),
 			Title:      q.Title,
 			Types:      q.Types,
 			IsRequired: q.Required,
 			PollsID:    pollId,
 			Options:    options,
 		})
-		if err != nil {
-			resWithErr(w, http.StatusInternalServerError, "Couldn't create quetions table", err)
-			return
-		}
+	}
+
+	_, err = cfg.db.QuestionsBulkInsert(context.Background(), questions)
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "couldn't save questions to db", err)
+		return
 	}
 
 	respondWithJSON(w, http.StatusOK, response{

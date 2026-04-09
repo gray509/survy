@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gray509/polls/internal/auth"
 	"github.com/gray509/polls/internal/database"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/gray509/polls/internal/querieutils"
 )
 
 func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
@@ -48,14 +49,15 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 		resWithErr(w, http.StatusInternalServerError, "Could't make access token", err)
 	}
 
-	refreshToken := auth.MakeRefreshToken()
+	refreshToken, hash, create_at, expires_at, err := auth.MakeRefreshToken()
+	err = cfg.db.AddRefreshToken(r.Context(), database.AddRefreshTokenParams{
+		ID:        uuid.New(),
+		TokenHash: hash,
+		UserID:    user.ID,
+		CreatedAt: querieutils.Time(create_at),
+		ExpiresAt: querieutils.Time(expires_at),
+	})
 
-	err = cfg.db.SetRefreshTokenById(r.Context(), database.SetRefreshTokenByIdParams{
-		RefreshToken: pgtype.Text{
-			String: refreshToken,
-			Valid:  true,
-		},
-		ID: user.ID})
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "Could't save refresh token", err)
 	}

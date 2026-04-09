@@ -10,23 +10,27 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createResponse = `-- name: CreateResponse :one
 INSERT INTO responses (id, created_at, updated_at, response, polls_id, questions_id, voter_id)
 VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
     $1,
     $2,
     $3,
-    $4
+    $4,
+    $5,
+    $6,
+    $7
 )
 RETURNING id, created_at, updated_at, response, questions_id, voter_id, polls_id
 `
 
 type CreateResponseParams struct {
+	ID          uuid.UUID
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
 	Response    json.RawMessage
 	PollsID     uuid.UUID
 	QuestionsID uuid.UUID
@@ -35,6 +39,9 @@ type CreateResponseParams struct {
 
 func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) (Response, error) {
 	row := q.db.QueryRow(ctx, createResponse,
+		arg.ID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 		arg.Response,
 		arg.PollsID,
 		arg.QuestionsID,

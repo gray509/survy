@@ -10,24 +10,28 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createQuestion = `-- name: CreateQuestion :one
 INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,polls_id, options)
 VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
     $1,
     $2,
     $3,
     $4,
-    $5
+    $5,
+    $6,
+    $7,
+    $8
 )
 RETURNING id
 `
 
 type CreateQuestionParams struct {
+	ID         uuid.UUID
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
 	Title      string
 	Types      string
 	IsRequired bool
@@ -37,6 +41,9 @@ type CreateQuestionParams struct {
 
 func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, createQuestion,
+		arg.ID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 		arg.Title,
 		arg.Types,
 		arg.IsRequired,
@@ -81,4 +88,15 @@ func (q *Queries) GetQuestionsWithPollid(ctx context.Context, pollsID uuid.UUID)
 		return nil, err
 	}
 	return items, nil
+}
+
+type QuestionsBulkInsertParams struct {
+	ID         uuid.UUID
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
+	Title      string
+	Types      string
+	IsRequired bool
+	PollsID    uuid.UUID
+	Options    *json.RawMessage
 }

@@ -1,8 +1,8 @@
 -- +goose Up
 CREATE TABLE users(
     id UUID PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     email TEXT NOT NULL,
     password TEXT NOT NULL,
     refresh_token TEXT
@@ -10,8 +10,8 @@ CREATE TABLE users(
 
 CREATE TABLE polls(
     id UUID PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     title TEXT NOT NULL,
     --user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     config JSONB NOT NULL
@@ -19,8 +19,8 @@ CREATE TABLE polls(
 
 CREATE TABLE questions(
     id UUID PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     title TEXT NOT NULL,
     --polls_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
     options JSONB DEFAULT '{}'::jsonb,
@@ -30,8 +30,8 @@ CREATE TABLE questions(
 
 CREATE TABLE responses(
     id UUID PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     response JSONB NOT NULL
     --voter_id UUID NOT NULL REFERENCES voter(id) ON DELETE CASCADE,
     --questions_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
@@ -40,8 +40,8 @@ CREATE TABLE responses(
 
 CREATE TABLE voter(
     id UUID PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     ip TEXT,
     hash TEXT
 );

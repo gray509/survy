@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func HashPassword(password string) (string, error) {
+func Hash(password string) (string, error) {
 	return argon2id.CreateHash(password, argon2id.DefaultParams)
 }
 
@@ -78,8 +78,15 @@ func GetBearerToken(headers http.Header) (string, error) {
 
 }
 
-func MakeRefreshToken() string {
+func MakeRefreshToken() (string, string, *time.Time, *time.Time, error) {
 	token := make([]byte, 32)
 	rand.Read(token)
-	return hex.EncodeToString(token)
+	hexToken := hex.EncodeToString(token)
+	hash, err := Hash(hexToken)
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+	create_at := time.Now()
+	expires_at := create_at.Add(time.Hour * 24 * 2)
+	return hexToken, hash, &create_at, &expires_at, nil
 }

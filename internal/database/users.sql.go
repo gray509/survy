@@ -15,22 +15,31 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, created_at, updated_at, email, password)
 VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
     $1,
-    $2
+    $2,
+    $3,
+    $4,
+    $5
 )
-RETURNING id, created_at, updated_at, email, password, refresh_token
+RETURNING id, created_at, updated_at, email, password
 `
 
 type CreateUserParams struct {
-	Email    string
-	Password string
+	ID        uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Email     string
+	Password  string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Password)
+	row := q.db.QueryRow(ctx, createUser,
+		arg.ID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Email,
+		arg.Password,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -38,13 +47,12 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Email,
 		&i.Password,
-		&i.RefreshToken,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, created_at, updated_at, email, password, refresh_token FROM users
+SELECT id, created_at, updated_at, email, password FROM users
 WHERE email = $1
 `
 
@@ -57,7 +65,6 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 		&i.Email,
 		&i.Password,
-		&i.RefreshToken,
 	)
 	return i, err
 }
@@ -68,22 +75,6 @@ DELETE FROM users
 
 func (q *Queries) ResetAllUsers(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, resetAllUsers)
-	return err
-}
-
-const setRefreshTokenById = `-- name: SetRefreshTokenById :exec
-UPDATE users
-SET updated_at = NOW(), refresh_token = $1
-WHERE id = $2
-`
-
-type SetRefreshTokenByIdParams struct {
-	RefreshToken pgtype.Text
-	ID           uuid.UUID
-}
-
-func (q *Queries) SetRefreshTokenById(ctx context.Context, arg SetRefreshTokenByIdParams) error {
-	_, err := q.db.Exec(ctx, setRefreshTokenById, arg.RefreshToken, arg.ID)
 	return err
 }
 

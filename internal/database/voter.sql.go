@@ -8,28 +8,38 @@ package database
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createVoter = `-- name: CreateVoter :one
 INSERT INTO voter (id, created_at, updated_at, ip, hash)
 VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
     $1,
-    $2
+    $2,
+    $3,
+    $4,
+    $5
 )
 RETURNING id, created_at, updated_at, ip, hash
 `
 
 type CreateVoterParams struct {
-	Ip   pgtype.Text
-	Hash pgtype.Text
+	ID        uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Ip        pgtype.Text
+	Hash      pgtype.Text
 }
 
 func (q *Queries) CreateVoter(ctx context.Context, arg CreateVoterParams) (Voter, error) {
-	row := q.db.QueryRow(ctx, createVoter, arg.Ip, arg.Hash)
+	row := q.db.QueryRow(ctx, createVoter,
+		arg.ID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Ip,
+		arg.Hash,
+	)
 	var i Voter
 	err := row.Scan(
 		&i.ID,

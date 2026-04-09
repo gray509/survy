@@ -10,29 +10,40 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createPoll = `-- name: CreatePoll :one
 INSERT INTO polls (id, created_at, updated_at, title, user_id, config)
 VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
     $1,
     $2,
-    $3
+    $3,
+    $4,
+    $5,
+    $6
 )
 RETURNING id
 `
 
 type CreatePollParams struct {
-	Title  string
-	UserID uuid.UUID
-	Config json.RawMessage
+	ID        uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Title     string
+	UserID    uuid.UUID
+	Config    json.RawMessage
 }
 
 func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, createPoll, arg.Title, arg.UserID, arg.Config)
+	row := q.db.QueryRow(ctx, createPoll,
+		arg.ID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Title,
+		arg.UserID,
+		arg.Config,
+	)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err

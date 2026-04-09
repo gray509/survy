@@ -13,8 +13,8 @@ import (
 
 type Poll struct {
 	ID        uuid.UUID
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 	Title     string
 	Config    json.RawMessage
 	UserID    uuid.UUID
@@ -22,8 +22,8 @@ type Poll struct {
 
 type Question struct {
 	ID         uuid.UUID
-	CreatedAt  pgtype.Timestamp
-	UpdatedAt  pgtype.Timestamp
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
 	Title      string
 	Options    *json.RawMessage
 	IsRequired bool
@@ -31,10 +31,19 @@ type Question struct {
 	PollsID    uuid.UUID
 }
 
+type RefreshToken struct {
+	ID        uuid.UUID
+	TokenHash string
+	UserID    uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+	RevokedAt pgtype.Timestamptz
+}
+
 type Response struct {
 	ID          uuid.UUID
-	CreatedAt   pgtype.Timestamp
-	UpdatedAt   pgtype.Timestamp
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
 	Response    json.RawMessage
 	QuestionsID uuid.UUID
 	VoterID     uuid.UUID
@@ -42,18 +51,17 @@ type Response struct {
 }
 
 type User struct {
-	ID           uuid.UUID
-	CreatedAt    pgtype.Timestamp
-	UpdatedAt    pgtype.Timestamp
-	Email        string
-	Password     string
-	RefreshToken pgtype.Text
+	ID        uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Email     string
+	Password  string
 }
 
 type Voter struct {
 	ID        uuid.UUID
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 	Ip        pgtype.Text
 	Hash      pgtype.Text
 }
