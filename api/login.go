@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gray509/polls/internal/auth"
-	"github.com/gray509/polls/internal/database"
-	"github.com/gray509/polls/internal/querieutils"
+	"github.com/gray509/survy/internal/auth"
+	"github.com/gray509/survy/internal/database"
+	"github.com/gray509/survy/internal/querieutils"
 )
 
 // "POST /v0/login"

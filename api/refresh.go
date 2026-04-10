@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gray509/polls/internal/auth"
+	"github.com/gray509/survy/internal/auth"
 )
 
 // "POST /v0/refresh"

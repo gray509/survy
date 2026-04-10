@@ -8,7 +8,7 @@ CREATE TABLE users(
     refresh_token TEXT
 );
 
-CREATE TABLE polls(
+CREATE TABLE surveys(
     id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE questions(
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     title TEXT NOT NULL,
-    --polls_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+    --surveys_id UUID NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
     options JSONB DEFAULT '{}'::jsonb,
     is_required BOOLEAN NOT NUll,
     types TEXT NOT NULL
@@ -35,7 +35,7 @@ CREATE TABLE responses(
     response JSONB NOT NULL
     --voter_id UUID NOT NULL REFERENCES voter(id) ON DELETE CASCADE,
     --questions_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-    --polls_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE
+    --surveys_id UUID NOT NULL REFERENCES surveys(id) ON DELETE CASCADE
 );
 
 CREATE TABLE voter(
@@ -48,7 +48,7 @@ CREATE TABLE voter(
 
 -- +goose Down
 DROP TABLE users;
-DROP TABLE polls;
+DROP TABLE surveys;
 DROP TABLE questions;
 DROP TABLE responses;
 DROP TABLE voter;

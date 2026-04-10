@@ -1,6 +1,6 @@
 package api
 
-import "github.com/gray509/polls/internal/database"
+import "github.com/gray509/survy/internal/database"
 
 const (
 	MultiChoice  = "multi-choice"

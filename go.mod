@@ -1,4 +1,4 @@
-module github.com/gray509/polls
+module github.com/gray509/survy
 
 go 1.25.0
 

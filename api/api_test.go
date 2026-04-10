@@ -11,13 +11,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gray509/polls/internal/database"
+	"github.com/gray509/survy/internal/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 )
 
 type testJson struct {
-	ClientCreatePoll struct {
+	ClientCreateSurvey struct {
 		Title  string `json:"title"`
 		Config struct {
 			ExpirationTime string `json:"expiration_time"`
@@ -32,7 +32,7 @@ type testJson struct {
 				Answers []string `json:"answers"`
 			} `json:"options,omitempty"`
 		} `json:"questions"`
-	} `json:"client_create_poll"`
+	} `json:"client_create_Survey"`
 	CreateUser struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -51,7 +51,7 @@ type login_response struct {
 }
 
 func getJsonTest() ([]byte, error) {
-	data, err := os.ReadFile("/home/ddori/workspace/github/polls/test.json")
+	data, err := os.ReadFile("/home/ddori/workspace/github/survys/test.json")
 	if err != nil {
 		return nil, err
 	}
@@ -207,18 +207,18 @@ func TestUserFlow(t *testing.T) {
 		}
 	})
 
-	// create poll with no access token
-	t.Run("create poll w/no access token", func(t *testing.T) {
+	// create survey with no access token
+	t.Run("create survey w/no access token", func(t *testing.T) {
 		data, err := getJsonTest()
-		clientCreatePollRequest := testJson{}
-		if err = json.Unmarshal(data, &clientCreatePollRequest); err != nil {
+		clientCreateSurveyRequest := testJson{}
+		if err = json.Unmarshal(data, &clientCreateSurveyRequest); err != nil {
 			t.Fatal(err)
 		}
-		body, err := json.Marshal(clientCreatePollRequest.ClientCreatePoll)
+		body, err := json.Marshal(clientCreateSurveyRequest.ClientCreateSurvey)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/poll", bytes.NewBuffer(body))
+		req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/survey", bytes.NewBuffer(body))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -229,18 +229,18 @@ func TestUserFlow(t *testing.T) {
 		checkingExpectedStatusCode(respStatusCode, respBody, http.StatusUnauthorized, t)
 	})
 
-	//create poll
-	t.Run("create poll", func(t *testing.T) {
+	//create survey
+	t.Run("create survey", func(t *testing.T) {
 		data, err := getJsonTest()
-		clientCreatePollRequest := testJson{}
-		if err = json.Unmarshal(data, &clientCreatePollRequest); err != nil {
+		clientCreateSurveyRequest := testJson{}
+		if err = json.Unmarshal(data, &clientCreateSurveyRequest); err != nil {
 			t.Fatal(err)
 		}
-		body, err := json.Marshal(clientCreatePollRequest.ClientCreatePoll)
+		body, err := json.Marshal(clientCreateSurveyRequest.ClientCreateSurvey)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/poll", bytes.NewBuffer(body))
+		req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/Survey", bytes.NewBuffer(body))
 		if err != nil {
 			t.Fatal(err)
 		}

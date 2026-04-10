@@ -1,5 +1,5 @@
 {
-   "client_create_poll": {
+   "client_create_survey": {
 	"title": "this is the title",
 	"config": {
 		"expiration_time": "string",

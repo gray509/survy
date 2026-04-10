@@ -1,5 +1,5 @@
 -- name: CreateResponse :one
-INSERT INTO responses (id, created_at, updated_at, response, polls_id, questions_id, voter_id)
+INSERT INTO responses (id, created_at, updated_at, response, surveys_id, questions_id, voter_id)
 VALUES (
     $1,
     $2,

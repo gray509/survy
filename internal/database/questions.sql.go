@@ -14,7 +14,7 @@ import (
 )
 
 const createQuestion = `-- name: CreateQuestion :one
-INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,polls_id, options)
+INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,surveys_id, options)
 VALUES (
     $1,
     $2,
@@ -35,7 +35,7 @@ type CreateQuestionParams struct {
 	Title      string
 	Types      string
 	IsRequired bool
-	PollsID    uuid.UUID
+	SurveysID  uuid.UUID
 	Options    *json.RawMessage
 }
 
@@ -47,7 +47,7 @@ func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) 
 		arg.Title,
 		arg.Types,
 		arg.IsRequired,
-		arg.PollsID,
+		arg.SurveysID,
 		arg.Options,
 	)
 	var id uuid.UUID
@@ -55,14 +55,14 @@ func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) 
 	return id, err
 }
 
-const getQuestionsWithPollid = `-- name: GetQuestionsWithPollid :many
-select id, created_at, updated_at, title, options, is_required, types, polls_id 
+const getQuestionsWithSurveyid = `-- name: GetQuestionsWithSurveyid :many
+select id, created_at, updated_at, title, options, is_required, types, surveys_id 
 from questions 
-where polls_id = $1
+where surveys_id = $1
 `
 
-func (q *Queries) GetQuestionsWithPollid(ctx context.Context, pollsID uuid.UUID) ([]Question, error) {
-	rows, err := q.db.Query(ctx, getQuestionsWithPollid, pollsID)
+func (q *Queries) GetQuestionsWithSurveyid(ctx context.Context, surveysID uuid.UUID) ([]Question, error) {
+	rows, err := q.db.Query(ctx, getQuestionsWithSurveyid, surveysID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (q *Queries) GetQuestionsWithPollid(ctx context.Context, pollsID uuid.UUID)
 			&i.Options,
 			&i.IsRequired,
 			&i.Types,
-			&i.PollsID,
+			&i.SurveysID,
 		); err != nil {
 			return nil, err
 		}
@@ -97,6 +97,6 @@ type QuestionsBulkInsertParams struct {
 	Title      string
 	Types      string
 	IsRequired bool
-	PollsID    uuid.UUID
+	SurveysID  uuid.UUID
 	Options    *json.RawMessage
 }

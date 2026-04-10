@@ -1,5 +1,5 @@
 -- name: CreateQuestion :one
-INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,polls_id, options)
+INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,surveys_id, options)
 VALUES (
     $1,
     $2,
@@ -12,13 +12,13 @@ VALUES (
 )
 RETURNING id;
 
--- name: GetQuestionsWithPollid :many
+-- name: GetQuestionsWithSurveyid :many
 select * 
 from questions 
-where polls_id = $1;
+where surveys_id = $1;
 
 -- name: QuestionsBulkInsert :copyfrom
-INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,polls_id, options)
+INSERT INTO questions (id, created_at, updated_at, title, types, is_required ,surveys_id, options)
 VALUES (
     $1,
     $2,

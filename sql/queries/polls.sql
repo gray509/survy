@@ -1,5 +1,5 @@
--- name: CreatePoll :one
-INSERT INTO polls (id, created_at, updated_at, title, user_id, config)
+-- name: CreateSurvey :one
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, config)
 VALUES (
     $1,
     $2,

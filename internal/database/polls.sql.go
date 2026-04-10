@@ -13,8 +13,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createPoll = `-- name: CreatePoll :one
-INSERT INTO polls (id, created_at, updated_at, title, user_id, config)
+const createSurvey = `-- name: CreateSurvey :one
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, config)
 VALUES (
     $1,
     $2,
@@ -26,7 +26,7 @@ VALUES (
 RETURNING id
 `
 
-type CreatePollParams struct {
+type CreateSurveyParams struct {
 	ID        uuid.UUID
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
@@ -35,8 +35,8 @@ type CreatePollParams struct {
 	Config    json.RawMessage
 }
 
-func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, createPoll,
+func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, createSurvey,
 		arg.ID,
 		arg.CreatedAt,
 		arg.UpdatedAt,

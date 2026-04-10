@@ -35,7 +35,7 @@ func (r iteratorForQuestionsBulkInsert) Values() ([]interface{}, error) {
 		r.rows[0].Title,
 		r.rows[0].Types,
 		r.rows[0].IsRequired,
-		r.rows[0].PollsID,
+		r.rows[0].SurveysID,
 		r.rows[0].Options,
 	}, nil
 }
@@ -45,5 +45,5 @@ func (r iteratorForQuestionsBulkInsert) Err() error {
 }
 
 func (q *Queries) QuestionsBulkInsert(ctx context.Context, arg []QuestionsBulkInsertParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"questions"}, []string{"id", "created_at", "updated_at", "title", "types", "is_required", "polls_id", "options"}, &iteratorForQuestionsBulkInsert{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"questions"}, []string{"id", "created_at", "updated_at", "title", "types", "is_required", "surveys_id", "options"}, &iteratorForQuestionsBulkInsert{rows: arg})
 }

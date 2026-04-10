@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gray509/polls/api"
-	"github.com/gray509/polls/internal/database"
+	"github.com/gray509/survy/api"
+	"github.com/gray509/survy/internal/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 )
@@ -34,7 +34,7 @@ func main() {
 	mux.HandleFunc("POST /v0/revoke", apicfg.Revoke)
 
 	mux.HandleFunc("POST /v0/signup", apicfg.CreateUser)
-	mux.HandleFunc("POST /v0/poll", apicfg.CreatePoll)
+	mux.HandleFunc("POST /v0/survey", apicfg.CreateSurvey)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

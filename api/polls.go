@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gray509/polls/internal/auth"
-	"github.com/gray509/polls/internal/database"
-	"github.com/gray509/polls/internal/querieutils"
+	"github.com/gray509/survy/internal/auth"
+	"github.com/gray509/survy/internal/database"
+	"github.com/gray509/survy/internal/querieutils"
 )
 
-func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Title  string `json:"title"`
 		Config struct {
@@ -32,7 +32,7 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-		Pollid uuid.UUID `json:"poll_id"`
+		Surveyid uuid.UUID `json:"survey_id"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -63,7 +63,7 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now()
 	timestamptz := querieutils.Time(&now)
-	pollId, err := cfg.db.CreatePoll(r.Context(), database.CreatePollParams{
+	surveyId, err := cfg.db.CreateSurvey(r.Context(), database.CreateSurveyParams{
 		ID:        uuid.New(),
 		CreatedAt: timestamptz,
 		UpdatedAt: timestamptz,
@@ -72,7 +72,7 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		Config:    config,
 	})
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "couldn't save poll to db", err)
+		resWithErr(w, http.StatusInternalServerError, "couldn't save survey to db", err)
 		return
 	}
 	questions := make([]database.QuestionsBulkInsertParams, 0)
@@ -99,7 +99,7 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 			Title:      q.Title,
 			Types:      q.Types,
 			IsRequired: q.Required,
-			PollsID:    pollId,
+			SurveysID:  surveyId,
 			Options:    options,
 		})
 	}
@@ -111,6 +111,6 @@ func (cfg *apiConfig) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, response{
-		Pollid: pollId,
+		Surveyid: surveyId,
 	})
 }
