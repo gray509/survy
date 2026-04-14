@@ -33,3 +33,16 @@ func Time(v *time.Time) pgtype.Timestamptz {
 		Valid:            true,
 	}
 }
+
+func Int4(v *int) pgtype.Int4 {
+	if v == nil {
+		return pgtype.Int4{
+			Int32: 0,
+			Valid: false,
+		}
+	}
+	return pgtype.Int4{
+		Int32: int32(*v),
+		Valid: true,
+	}
+}

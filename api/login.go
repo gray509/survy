@@ -66,8 +66,8 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:        user.ID,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
+			CreatedAt: user.CreatedAt.Time,
+			UpdatedAt: user.UpdatedAt.Time,
 			Email:     user.Email,
 		},
 		AccessToken:  accessToken,

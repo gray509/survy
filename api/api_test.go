@@ -2,41 +2,32 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
-	"github.com/gray509/survy/internal/database"
-	"github.com/jackc/pgx/v5"
-	"github.com/joho/godotenv"
+	"github.com/google/uuid"
 )
 
 type testJson struct {
 	ClientCreateSurvey struct {
-		Title  string `json:"title"`
-		Config struct {
-			ExpirationTime string `json:"expiration_time"`
-			Identified     bool   `json:"identified"`
-			MaxResponse    int    `json:"max_response"`
-		} `json:"config"`
-		Questions []struct {
-			Title    string `json:"title"`
-			Types    string `json:"types"`
-			Required bool   `json:"required"`
-			Options  struct {
+		Title          string    `json:"title"`
+		ExpirationTime time.Time `json:"expiration_time"`
+		Identified     bool      `json:"identified"`
+		MaxResponse    int       `json:"max_response"`
+		Questions      []struct {
+			Title      string `json:"title"`
+			Types      string `json:"types"`
+			IsRequired bool   `json:"required"`
+			Options    struct {
 				Answers []string `json:"answers"`
 			} `json:"options,omitempty"`
 		} `json:"questions"`
 	} `json:"client_create_Survey"`
-	CreateUser struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	} `json:"create_user"`
 }
 
 type r_email_pass struct {
@@ -49,23 +40,27 @@ type login_response struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
+type responseSurveyId struct {
+	Surveyid uuid.UUID `json:"survey_id"`
+}
 
 func getJsonTest() ([]byte, error) {
-	data, err := os.ReadFile("/home/ddori/workspace/github/survys/test.json")
+	data, err := os.ReadFile("../test.json")
 	if err != nil {
 		return nil, err
 	}
 	return data, err
 }
-func getQueries() (*database.Queries, error) {
-	godotenv.Load(".env.test")
-	dbURL := os.Getenv("DB_URL")
-	db, err := pgx.Connect(context.Background(), dbURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return database.New(db), nil
-}
+
+// func getQueries() (*database.Queries, error) {
+// 	godotenv.Load(".env.test")
+// 	dbURL := os.Getenv("DB_URL")
+// 	db, err := pgx.Connect(context.Background(), dbURL)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	return database.New(db), nil
+// }
 
 func checkingExpectedStatusCode(statusCode int, respBody []byte, expectedCode int, t *testing.T) {
 	if statusCode != expectedCode {
@@ -101,6 +96,12 @@ func TestUserFlow(t *testing.T) {
 	clientUserCreateRequest := r_email_pass{
 		Email:    "test@test.com",
 		Password: "pass",
+	}
+	surveyID := responseSurveyId{}
+	data, err := getJsonTest()
+	clientCreateSurveyRequest := testJson{}
+	if err = json.Unmarshal(data, &clientCreateSurveyRequest); err != nil {
+		t.Fatal(err)
 	}
 
 	// reset the db
@@ -209,11 +210,6 @@ func TestUserFlow(t *testing.T) {
 
 	// create survey with no access token
 	t.Run("create survey w/no access token", func(t *testing.T) {
-		data, err := getJsonTest()
-		clientCreateSurveyRequest := testJson{}
-		if err = json.Unmarshal(data, &clientCreateSurveyRequest); err != nil {
-			t.Fatal(err)
-		}
 		body, err := json.Marshal(clientCreateSurveyRequest.ClientCreateSurvey)
 		if err != nil {
 			t.Fatal(err)
@@ -231,16 +227,28 @@ func TestUserFlow(t *testing.T) {
 
 	//create survey
 	t.Run("create survey", func(t *testing.T) {
-		data, err := getJsonTest()
-		clientCreateSurveyRequest := testJson{}
-		if err = json.Unmarshal(data, &clientCreateSurveyRequest); err != nil {
-			t.Fatal(err)
-		}
 		body, err := json.Marshal(clientCreateSurveyRequest.ClientCreateSurvey)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/Survey", bytes.NewBuffer(body))
+		req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/survey", bytes.NewBuffer(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", loginResp.AccessToken))
+		_, respStatusCode, respBody, err := sendRequest(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		checkingExpectedStatusCode(respStatusCode, respBody, http.StatusOK, t)
+		if err = json.Unmarshal(respBody, &surveyID); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	//serve survey
+	t.Run("serve survey", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:8080/v0/survey/%s", surveyID.Surveyid), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -251,5 +259,4 @@ func TestUserFlow(t *testing.T) {
 		}
 		checkingExpectedStatusCode(respStatusCode, respBody, http.StatusOK, t)
 	})
-
 }

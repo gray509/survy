@@ -13,20 +13,18 @@ import (
 	"github.com/gray509/survy/internal/querieutils"
 )
 
+// "POST /v0/survey"
 func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Title  string `json:"title"`
-		Config struct {
-			ExpirationTime string `json:"expiration_time"`
-			Identified     bool   `json:"identified"`
-			MaxResponse    int    `json:"max_response"`
-		} `json:"config"`
-		Questions []struct {
-			Title    string `json:"title"`
-			Types    string `json:"types"`
-			Required bool   `json:"required"`
-			Options  struct {
-				Answers []string `json:"answers"`
+		Title          string    `json:"title"`
+		ExpirationTime time.Time `json:"expiration_time"`
+		Identified     bool      `json:"identified"`
+		MaxResponse    int       `json:"max_response"`
+		Questions      []struct {
+			Title      string        `json:"title"`
+			Types      QuestionTypes `json:"types"`
+			IsRequired bool          `json:"required"`
+			Options    struct {
 			} `json:"options,omitempty"`
 		} `json:"questions"`
 	}
@@ -56,20 +54,18 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// proocessing to db
-	config, err := json.Marshal(params.Config)
-	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't marshall config", err)
-		return
-	}
+
 	now := time.Now()
 	timestamptz := querieutils.Time(&now)
 	surveyId, err := cfg.db.CreateSurvey(r.Context(), database.CreateSurveyParams{
-		ID:        uuid.New(),
-		CreatedAt: timestamptz,
-		UpdatedAt: timestamptz,
-		Title:     params.Title,
-		UserID:    userId,
-		Config:    config,
+		ID:             uuid.New(),
+		CreatedAt:      timestamptz,
+		UpdatedAt:      timestamptz,
+		Title:          params.Title,
+		UserID:         userId,
+		ExpirationTime: querieutils.Time(&params.ExpirationTime),
+		Indentified:    params.Identified,
+		MaxResponse:    querieutils.Int4(&params.MaxResponse),
 	})
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "couldn't save survey to db", err)
@@ -79,7 +75,7 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 	for _, q := range params.Questions {
 		var options *json.RawMessage
 		switch q.Types {
-		case MultiChoice, SingleChoice, Rating, Ranking:
+		case (MultiChoice), SingleChoice, Rating, Ranking:
 			rawJson, err := json.Marshal(q.Options)
 			if err != nil {
 				resWithErr(w, http.StatusInternalServerError, "Couldn't marshal options", err)
@@ -97,8 +93,8 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:  timestamptz,
 			UpdatedAt:  timestamptz,
 			Title:      q.Title,
-			Types:      q.Types,
-			IsRequired: q.Required,
+			Types:      string(q.Types),
+			IsRequired: q.IsRequired,
 			SurveysID:  surveyId,
 			Options:    options,
 		})
@@ -112,5 +108,62 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, response{
 		Surveyid: surveyId,
+	})
+}
+
+// GET /v0/survey/{surveyId}
+func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		Survey
+		questions []Questions
+	}
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error getting header jwt token", err)
+		return
+	}
+	userId, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error validating token", err)
+		return
+	}
+	urlSurveyId, err := uuid.Parse(r.PathValue("surveyId"))
+	if err != nil {
+		resWithErr(w, http.StatusBadRequest, "err with uuid", err)
+		return
+	}
+
+	survey, err := cfg.db.GetSurveyByIdUserId(r.Context(), database.GetSurveyByIdUserIdParams{ID: urlSurveyId, UserID: userId})
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error retrieving survey", err)
+		return
+	}
+
+	questions, err := cfg.db.GetQuestionBySurveyId(r.Context(), survey.ID)
+	var responseQuestions []Questions
+	var options map[string]interface{}
+	for _, q := range questions {
+		err = json.Unmarshal(*q.Options, &options)
+		if err != nil {
+			resWithErr(w, http.StatusInternalServerError, "Couldn't parse options to json", err)
+			return
+		}
+		responseQuestions = append(responseQuestions, Questions{
+			Title:      q.Title,
+			Types:      QuestionTypes(q.Types),
+			IsRequired: q.IsRequired,
+			Options:    options,
+		})
+	}
+	respondWithJSON(w, http.StatusOK, response{
+		Survey: Survey{
+			Id:             survey.ID,
+			CreatedAt:      survey.CreatedAt.Time,
+			UpdatedAt:      survey.ExpirationTime.Time,
+			Title:          survey.Title,
+			ExpirationTime: survey.ExpirationTime.Time,
+			Identified:     survey.Indentified,
+			MaxResponse:    int(survey.MaxResponse.Int32),
+		},
 	})
 }

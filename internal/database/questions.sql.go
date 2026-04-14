@@ -55,6 +55,41 @@ func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) 
 	return id, err
 }
 
+const getQuestionBySurveyId = `-- name: GetQuestionBySurveyId :many
+Select id, created_at, updated_at, title, options, is_required, types, surveys_id
+FROM questions
+WHERE surveys_id = $1
+`
+
+func (q *Queries) GetQuestionBySurveyId(ctx context.Context, surveysID uuid.UUID) ([]Question, error) {
+	rows, err := q.db.Query(ctx, getQuestionBySurveyId, surveysID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Question
+	for rows.Next() {
+		var i Question
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Options,
+			&i.IsRequired,
+			&i.Types,
+			&i.SurveysID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getQuestionsWithSurveyid = `-- name: GetQuestionsWithSurveyid :many
 select id, created_at, updated_at, title, options, is_required, types, surveys_id 
 from questions 

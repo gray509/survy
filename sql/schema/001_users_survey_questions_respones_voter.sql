@@ -14,7 +14,9 @@ CREATE TABLE surveys(
     updated_at TIMESTAMPTZ NOT NULL,
     title TEXT NOT NULL,
     --user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    config JSONB NOT NULL
+    expiration_time TIMESTAMPTZ,
+    indentified BOOLEAN NOT NULL,
+    max_response INTEGER
 );
 
 CREATE TABLE questions(

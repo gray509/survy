@@ -9,15 +9,7 @@ import (
 	"github.com/gray509/survy/internal/auth"
 	"github.com/gray509/survy/internal/database"
 	"github.com/gray509/survy/internal/querieutils"
-	"github.com/jackc/pgx/v5/pgtype"
 )
-
-type User struct {
-	ID        uuid.UUID          `json:"id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	Email     string             `json:"email"`
-}
 
 // "POST /v0/signup"
 func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -56,8 +48,8 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusCreated, User{
 		ID:        user.ID,
-		CreatedAt: timestamptz,
-		UpdatedAt: timestamptz,
+		CreatedAt: now,
+		UpdatedAt: now,
 		Email:     user.Email,
 	})
 

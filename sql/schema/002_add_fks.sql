@@ -21,7 +21,3 @@ ALTER TABLE responses
 DROP COLUMN questions_id,
 DROP COLUMN voter_id,
 DROP COLUMN surveys_id;
-
-
-
-

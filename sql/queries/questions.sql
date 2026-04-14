@@ -29,3 +29,8 @@ VALUES (
     $7,
     $8
 );
+
+-- name: GetQuestionBySurveyId :many
+Select *
+FROM questions
+WHERE surveys_id = $1;

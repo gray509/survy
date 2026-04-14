@@ -42,12 +42,14 @@ type Response struct {
 }
 
 type Survey struct {
-	ID        uuid.UUID
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Title     string
-	Config    json.RawMessage
-	UserID    uuid.UUID
+	ID             uuid.UUID
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Title          string
+	ExpirationTime pgtype.Timestamptz
+	Indentified    bool
+	MaxResponse    pgtype.Int4
+	UserID         uuid.UUID
 }
 
 type User struct {
