@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gray509/survy/internal/database"
+	"github.com/jackc/pgx/v5"
 )
 
 type QuestionTypes string
@@ -20,13 +20,13 @@ const (
 )
 
 type apiConfig struct {
-	db        *database.Queries
+	db        *pgx.Conn
 	port      string
 	platform  string
 	jwtSecret string
 }
 
-func NewConfig(db *database.Queries, port, platform, jwtSecret string) *apiConfig {
+func NewConfig(db *pgx.Conn, port, platform, jwtSecret string) *apiConfig {
 	return &apiConfig{
 		db:        db,
 		port:      port,

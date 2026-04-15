@@ -9,6 +9,42 @@ import (
 	"context"
 )
 
+// iteratorForBulkCreateUser implements pgx.CopyFromSource.
+type iteratorForBulkCreateUser struct {
+	rows                 []BulkCreateUserParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkCreateUser) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkCreateUser) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].CreatedAt,
+		r.rows[0].UpdatedAt,
+		r.rows[0].Email,
+		r.rows[0].Password,
+	}, nil
+}
+
+func (r iteratorForBulkCreateUser) Err() error {
+	return nil
+}
+
+func (q *Queries) BulkCreateUser(ctx context.Context, arg []BulkCreateUserParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"users"}, []string{"id", "created_at", "updated_at", "email", "password"}, &iteratorForBulkCreateUser{rows: arg})
+}
+
 // iteratorForQuestionsBulkInsert implements pgx.CopyFromSource.
 type iteratorForQuestionsBulkInsert struct {
 	rows                 []QuestionsBulkInsertParams

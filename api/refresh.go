@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gray509/survy/internal/auth"
+	"github.com/gray509/survy/internal/database"
 )
 
 // "POST /v0/refresh"
@@ -16,7 +17,8 @@ func (cfg *apiConfig) Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token_hash, err := auth.Hash(client_refresh_token)
-	user, err := cfg.db.GetUserFromRefreshToken(r.Context(), token_hash)
+	q := database.New(cfg.db)
+	user, err := q.GetUserFromRefreshToken(r.Context(), token_hash)
 	if err != nil {
 		resWithErr(w, http.StatusUnauthorized, "error retrieving refresh token", err)
 		return
@@ -40,7 +42,8 @@ func (cfg *apiConfig) Revoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token_hash, err := auth.Hash(client_refresh_token)
-	err = cfg.db.RevokeRefreshToken(r.Context(), token_hash)
+	q := database.New(cfg.db)
+	err = q.RevokeRefreshToken(r.Context(), token_hash)
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "Couldn't revoke session", err)
 		return

@@ -12,6 +12,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type BulkCreateUserParams struct {
+	ID        uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Email     string
+	Password  string
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, created_at, updated_at, email, password)
 VALUES (
@@ -78,16 +86,16 @@ func (q *Queries) ResetAllUsers(ctx context.Context) error {
 	return err
 }
 
-const userExit = `-- name: UserExit :one
+const userExist = `-- name: UserExist :one
 SELECT EXISTS (
   SELECT 1
   FROM users
-  WHERE id = $1
+  WHERE email = $1
 )
 `
 
-func (q *Queries) UserExit(ctx context.Context, id uuid.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, userExit, id)
+func (q *Queries) UserExist(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRow(ctx, userExist, email)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

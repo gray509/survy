@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/gray509/survy/api"
-	"github.com/gray509/survy/internal/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 )
@@ -23,7 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	apicfg := api.NewConfig(database.New(db), port, platform, jwtSecret)
+	apicfg := api.NewConfig(db, port, platform, jwtSecret)
 
 	mux := http.NewServeMux()
 

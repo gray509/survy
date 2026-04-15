@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -28,20 +29,21 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	emailPass := r_email_pass{}
 	err := decoder.Decode(&emailPass)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't decode rquest Json", err)
+		resWithErr(w, http.StatusInternalServerError, "Couldn't decode request Json", err)
 		return
 	}
-
+	q := database.New(cfg.db)
 	//GET USER FROM DB
-	user, err := cfg.db.GetUserByEmail(r.Context(), emailPass.Email)
+	user, err := q.GetUserByEmail(r.Context(), emailPass.Email)
 	if err != nil {
-		resWithErr(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		log.Println(emailPass.Email)
+		resWithErr(w, http.StatusUnauthorized, "Incorrect email", err)
 		return
 	}
 
 	match, err := auth.CheckPasswordHash(emailPass.Password, user.Password)
 	if err != nil || !match {
-		resWithErr(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		resWithErr(w, http.StatusUnauthorized, "Incorrect password", err)
 		return
 	}
 
@@ -51,7 +53,7 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refreshToken, hash, create_at, expires_at, err := auth.MakeRefreshToken()
-	err = cfg.db.AddRefreshToken(r.Context(), database.AddRefreshTokenParams{
+	err = q.AddRefreshToken(r.Context(), database.AddRefreshTokenParams{
 		ID:        uuid.New(),
 		TokenHash: hash,
 		UserID:    user.ID,

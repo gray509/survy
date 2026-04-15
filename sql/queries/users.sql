@@ -9,6 +9,16 @@ VALUES (
 )
 RETURNING *;
 
+-- name: BulkCreateUser :copyfrom
+INSERT INTO users (id, created_at, updated_at, email, password)
+VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5
+);
+
 -- name: ResetAllUsers :exec
 DELETE FROM users;
 
@@ -16,9 +26,9 @@ DELETE FROM users;
 SELECT * FROM users
 WHERE email = $1;
 
--- name: UserExit :one
+-- name: UserExist :one
 SELECT EXISTS (
   SELECT 1
   FROM users
-  WHERE id = $1
+  WHERE email = $1
 );
