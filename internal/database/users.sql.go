@@ -59,6 +59,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteTestUsers = `-- name: DeleteTestUsers :exec
+DELETE FROM users WHERE email LIKE 'user%@testsurvy.com'
+`
+
+func (q *Queries) DeleteTestUsers(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteTestUsers)
+	return err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, created_at, updated_at, email, password FROM users
 WHERE email = $1

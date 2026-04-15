@@ -35,14 +35,12 @@ type r_email_pass struct {
 	Password string `json:"password"`
 }
 type resp_login struct {
-	User struct {
-		Id        uuid.UUID `json:"id"`
-		CreateAt  time.Time `json:"create_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
-	} `json:"user"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Id           uuid.UUID `json:"id"`
+	CreateAt     time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func checkingExpectedStatusCode(statusCode int, respBody []byte, expectedCode int, t *testing.T) {
@@ -75,7 +73,7 @@ func sendRequest(req *http.Request) (*http.Response, int, []byte, error) {
 }
 func TestUserCreationFlow(t *testing.T) {
 	clientUserCreateRequest := r_email_pass{
-		Email:    "test@test.com",
+		Email:    "user-1@testsurvy.com",
 		Password: "pass",
 	}
 	user := User{}
@@ -128,14 +126,11 @@ func TestLoginFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	// tx, err := db.Begin(t.Context())
-	// if err != nil {
-	// 	t.Fatal()
-	// }
-	qtx := database.New(db) //.WithTx(tx)
+	qtx := database.New(db)
 	users, err := dummy.CreateUsers(qtx, 1, t)
-	//defer tx.Rollback(t.Context())
-
+	if err != nil {
+		t.Fatal(err)
+	}
 	type testCases struct {
 		title      string
 		statusCode int
@@ -145,8 +140,8 @@ func TestLoginFlow(t *testing.T) {
 
 	runCases := []testCases{
 		{"login with bad pass", http.StatusUnauthorized, r_email_pass{Email: users[0].Email, Password: "bad"}, false},
-		//{"login with bad email", http.StatusUnauthorized, r_email_pass{Email: "bad", Password: users[0].Password}, false},
-		//{"login", http.StatusOK, r_email_pass{Email: users[0].Email, Password: users[0].Password}, true},
+		{"login with bad email", http.StatusUnauthorized, r_email_pass{Email: "bad", Password: users[0].Password}, false},
+		{"login", http.StatusOK, r_email_pass{Email: users[0].Email, Password: users[0].Email}, true},
 	}
 	for _, tt := range runCases {
 		t.Run(tt.title, func(t *testing.T) {
@@ -168,8 +163,8 @@ func TestLoginFlow(t *testing.T) {
 				if err = json.Unmarshal(respBody, &loginResp); err != nil {
 					t.Fatal(err)
 				}
-				if tt.login.Email != loginResp.User.Email {
-					t.Fatal("user email does not match")
+				if tt.login.Email != loginResp.Email {
+					t.Fatalf("user email does not match, test_Email:%s != response_Email:%v", tt.login.Email, loginResp.Email)
 				}
 				if loginResp.AccessToken == "" {
 					t.Fatal("nil access token")
@@ -177,7 +172,7 @@ func TestLoginFlow(t *testing.T) {
 				if loginResp.RefreshToken == "" {
 					t.Fatal("nil refresh token")
 				}
-				if loginResp.User.Id != users[0].ID {
+				if loginResp.Id != users[0].ID {
 					t.Fatal("uuid ids does not match")
 				}
 			}
