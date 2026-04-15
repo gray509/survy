@@ -55,7 +55,7 @@ func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (uui
 }
 
 const getSurveyByIdUserId = `-- name: GetSurveyByIdUserId :one
-Select id, created_at, updated_at, title, expiration_time, indentified, max_response, user_id
+Select id, created_at, updated_at, title, expiration_time, indentified, max_response, is_published, user_id
 FROM surveys
 WHERE surveys.id = $1 AND surveys.user_id = $2
 `
@@ -76,6 +76,7 @@ func (q *Queries) GetSurveyByIdUserId(ctx context.Context, arg GetSurveyByIdUser
 		&i.ExpirationTime,
 		&i.Indentified,
 		&i.MaxResponse,
+		&i.IsPublished,
 		&i.UserID,
 	)
 	return i, err

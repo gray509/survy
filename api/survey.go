@@ -141,12 +141,16 @@ func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 
 	questions, err := cfg.db.GetQuestionBySurveyId(r.Context(), survey.ID)
 	var responseQuestions []Questions
-	var options map[string]interface{}
+	var options Options
 	for _, q := range questions {
-		err = json.Unmarshal(*q.Options, &options)
-		if err != nil {
-			resWithErr(w, http.StatusInternalServerError, "Couldn't parse options to json", err)
-			return
+		if q.Options != nil {
+			err = json.Unmarshal(*q.Options, &options)
+			if err != nil {
+				resWithErr(w, http.StatusInternalServerError, "Couldn't parse options to json", err)
+				return
+			}
+		} else {
+			options = Options{}
 		}
 		responseQuestions = append(responseQuestions, Questions{
 			Title:      q.Title,

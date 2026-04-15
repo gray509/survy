@@ -49,6 +49,7 @@ type Survey struct {
 	ExpirationTime pgtype.Timestamptz
 	Indentified    bool
 	MaxResponse    pgtype.Int4
+	IsPublished    bool
 	UserID         uuid.UUID
 }
 

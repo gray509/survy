@@ -35,7 +35,7 @@ func main() {
 
 	mux.HandleFunc("POST /v0/signup", apicfg.CreateUser)
 	mux.HandleFunc("POST /v0/survey", apicfg.CreateSurvey)
-	//mux.HandleFunc("GET /v0/survey/{surveyId}", apicfg.ServeSurvey)
+	mux.HandleFunc("GET /v0/survey/{surveyId}", apicfg.ServeSurvey)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

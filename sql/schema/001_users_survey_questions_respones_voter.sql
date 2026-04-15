@@ -16,7 +16,8 @@ CREATE TABLE surveys(
     --user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     expiration_time TIMESTAMPTZ,
     indentified BOOLEAN NOT NULL,
-    max_response INTEGER
+    max_response INTEGER,
+    is_published BOOLEAN DEFAULT FALSE NOT NULL
 );
 
 CREATE TABLE questions(
