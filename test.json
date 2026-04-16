@@ -1,9 +1,5 @@
 {
-	"create_user":{
-		"email" : "user@test.com",
-		"password": "THISTESTUSERPASSWORD"
-   },
-   "client_create_survey": {
+   "r_create_survey": {
 	"title": "this is the title",
 	"expiration_time": null,
 	"identified": true,

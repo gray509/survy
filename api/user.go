@@ -23,18 +23,18 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := decoder.Decode(&emailPass)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't decode request Json", err)
+		resWithErr(w, http.StatusInternalServerError, "Couldn't decode request Json // POST /v0/signup", err)
 		return
 	}
 	q := database.New(cfg.db)
 	match, err := q.UserExist(r.Context(), emailPass.Email)
 	if match {
-		resWithErr(w, http.StatusUnauthorized, "user already exists", err)
+		resWithErr(w, http.StatusUnauthorized, "user already exists // POST /v0/signup", err)
 		return
 	}
 	hashPass, err := auth.Hash(emailPass.Password)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't hash password", err)
+		resWithErr(w, http.StatusInternalServerError, "Couldn't hash password // POST /v0/signup", err)
 		return
 	}
 	now := time.Now()
@@ -47,7 +47,7 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Password:  hashPass})
 
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't save user", err)
+		resWithErr(w, http.StatusInternalServerError, "Couldn't save user // POST /v0/signup", err)
 		return
 	}
 

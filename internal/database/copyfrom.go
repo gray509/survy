@@ -9,6 +9,45 @@ import (
 	"context"
 )
 
+// iteratorForBulkCreateSurvey implements pgx.CopyFromSource.
+type iteratorForBulkCreateSurvey struct {
+	rows                 []BulkCreateSurveyParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkCreateSurvey) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkCreateSurvey) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].CreatedAt,
+		r.rows[0].UpdatedAt,
+		r.rows[0].Title,
+		r.rows[0].UserID,
+		r.rows[0].ExpirationTime,
+		r.rows[0].Indentified,
+		r.rows[0].MaxResponse,
+	}, nil
+}
+
+func (r iteratorForBulkCreateSurvey) Err() error {
+	return nil
+}
+
+func (q *Queries) BulkCreateSurvey(ctx context.Context, arg []BulkCreateSurveyParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"surveys"}, []string{"id", "created_at", "updated_at", "title", "user_id", "expiration_time", "indentified", "max_response"}, &iteratorForBulkCreateSurvey{rows: arg})
+}
+
 // iteratorForBulkCreateUser implements pgx.CopyFromSource.
 type iteratorForBulkCreateUser struct {
 	rows                 []BulkCreateUserParams

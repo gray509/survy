@@ -12,6 +12,18 @@ VALUES (
 )
 RETURNING id;
 
+-- name: BulkCreateSurvey :copyfrom
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, indentified, max_response)
+VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    $8
+);
 -- name: GetSurveyByIdUserId :one
 Select *
 FROM surveys

@@ -37,24 +37,26 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
+		resWithErr(w, http.StatusInternalServerError, "Couldn't decode parameters // POST /v0/survey", err)
 		return
 	}
 
 	// authorization
 	accessToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		resWithErr(w, http.StatusUnauthorized, "Error getting header jwt token", err)
+		resWithErr(w, http.StatusUnauthorized, "Error getting header jwt token // POST /v0/survey", err)
 		return
 	}
 	userId, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
 	if err != nil {
-		resWithErr(w, http.StatusUnauthorized, "Error validating token", err)
+		resWithErr(w, http.StatusUnauthorized, "Error validating token // POST /v0/survey", err)
 		return
 	}
-
+	if len(params.Questions) < 1 {
+		resWithErr(w, http.StatusBadRequest, "Empty question list // POST /v0/survey", fmt.Errorf("Empty question list"))
+		return
+	}
 	// proocessing to db
-
 	now := time.Now()
 	timestamptz := querieutils.Time(&now)
 	q := database.New(cfg.db)
@@ -69,7 +71,7 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 		MaxResponse:    querieutils.Int4(&params.MaxResponse),
 	})
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "couldn't save survey to db", err)
+		resWithErr(w, http.StatusInternalServerError, "couldn't save survey to db // POST /v0/survey", err)
 		return
 	}
 	questions := make([]database.QuestionsBulkInsertParams, 0)
@@ -79,7 +81,7 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 		case (MultiChoice), SingleChoice, Rating, Ranking:
 			rawJson, err := json.Marshal(q.Options)
 			if err != nil {
-				resWithErr(w, http.StatusInternalServerError, "Couldn't marshal options", err)
+				resWithErr(w, http.StatusInternalServerError, "Couldn't marshal options // POST /v0/survey", err)
 				return
 			}
 			options = (*json.RawMessage)(&rawJson)
@@ -87,7 +89,8 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 		case YesNo, OpenText:
 			// keeps options nil
 		default:
-			resWithErr(w, http.StatusBadRequest, "Couldn't recognize question type", fmt.Errorf("unknown question type: %v", q.Types))
+			resWithErr(w, http.StatusBadRequest, "Couldn't recognize question type // POST /v0/survey", fmt.Errorf("unknown question type: %v", q.Types))
+			return
 		}
 		questions = append(questions, database.QuestionsBulkInsertParams{
 			ID:         uuid.New(),
@@ -103,7 +106,7 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 
 	_, err = q.QuestionsBulkInsert(context.Background(), questions)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "couldn't save questions to db", err)
+		resWithErr(w, http.StatusInternalServerError, "couldn't save questions to db // POST /v0/survey", err)
 		return
 	}
 
@@ -120,23 +123,23 @@ func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 	}
 	accessToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		resWithErr(w, http.StatusUnauthorized, "Error getting header jwt token", err)
+		resWithErr(w, http.StatusUnauthorized, "Error getting header jwt token // GET /v0/survey/{surveyId}", err)
 		return
 	}
 	userId, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
 	if err != nil {
-		resWithErr(w, http.StatusUnauthorized, "Error validating token", err)
+		resWithErr(w, http.StatusUnauthorized, "Error validating token // GET /v0/survey/{surveyId}", err)
 		return
 	}
 	urlSurveyId, err := uuid.Parse(r.PathValue("surveyId"))
 	if err != nil {
-		resWithErr(w, http.StatusBadRequest, "err with uuid", err)
+		resWithErr(w, http.StatusNotFound, "err with uuid // GET /v0/survey/{surveyId}", err)
 		return
 	}
 	q := database.New(cfg.db)
 	survey, err := q.GetSurveyByIdUserId(r.Context(), database.GetSurveyByIdUserIdParams{ID: urlSurveyId, UserID: userId})
 	if err != nil {
-		resWithErr(w, http.StatusUnauthorized, "Error retrieving survey", err)
+		resWithErr(w, http.StatusUnauthorized, "Error retrieving survey // GET /v0/survey/{surveyId}", err)
 		return
 	}
 
@@ -147,7 +150,7 @@ func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 		if q.Options != nil {
 			err = json.Unmarshal(*q.Options, &options)
 			if err != nil {
-				resWithErr(w, http.StatusInternalServerError, "Couldn't parse options to json", err)
+				resWithErr(w, http.StatusInternalServerError, "Couldn't parse options to json // GET /v0/survey/{surveyId}", err)
 				return
 			}
 		} else {

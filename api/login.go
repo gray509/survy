@@ -29,7 +29,7 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	emailPass := r_email_pass{}
 	err := decoder.Decode(&emailPass)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't decode request Json", err)
+		resWithErr(w, http.StatusInternalServerError, "Couldn't decode request Json // POST /v0/login ", err)
 		return
 	}
 	q := database.New(cfg.db)
@@ -37,19 +37,19 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	user, err := q.GetUserByEmail(r.Context(), emailPass.Email)
 	if err != nil {
 		log.Println(emailPass.Email)
-		resWithErr(w, http.StatusUnauthorized, "Incorrect email", err)
+		resWithErr(w, http.StatusUnauthorized, "Incorrect email // POST /v0/login", err)
 		return
 	}
 
 	match, err := auth.CheckPasswordHash(emailPass.Password, user.Password)
 	if err != nil || !match {
-		resWithErr(w, http.StatusUnauthorized, "Incorrect password", err)
+		resWithErr(w, http.StatusUnauthorized, "Incorrect password // POST /v0/login", err)
 		return
 	}
 
 	accessToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Could't make access token", err)
+		resWithErr(w, http.StatusInternalServerError, "Could't make access token // POST /v0/login", err)
 	}
 
 	refreshToken, hash, create_at, expires_at, err := auth.MakeRefreshToken()
@@ -62,7 +62,7 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Could't save refresh token", err)
+		resWithErr(w, http.StatusInternalServerError, "Could't save refresh token // POST /v0/login", err)
 	}
 
 	respondWithJSON(w, http.StatusOK, response{

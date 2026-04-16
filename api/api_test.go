@@ -3,14 +3,15 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gray509/survy/dummy"
 	"github.com/gray509/survy/internal/database"
+	"github.com/gray509/survy/internal/dummy"
 )
 
 type testJson struct {
@@ -24,10 +25,9 @@ type testJson struct {
 			Types      string `json:"types"`
 			IsRequired bool   `json:"required"`
 			Options    struct {
-				Answers []string `json:"answers"`
 			} `json:"options,omitempty"`
 		} `json:"questions"`
-	} `json:"client_create_Survey"`
+	} `json:"r_create_Survey"`
 }
 
 type r_email_pass struct {
@@ -71,7 +71,7 @@ func sendRequest(req *http.Request) (*http.Response, int, []byte, error) {
 
 	return resp, resp.StatusCode, respBody, nil
 }
-func TestUserCreationFlow(t *testing.T) {
+func TestUserCreation(t *testing.T) {
 	clientUserCreateRequest := r_email_pass{
 		Email:    "user-1@testsurvy.com",
 		Password: "pass",
@@ -127,7 +127,9 @@ func TestLoginFlow(t *testing.T) {
 		t.Fatal()
 	}
 	qtx := database.New(db)
-	users, err := dummy.CreateUsers(qtx, 1, t)
+	defer qtx.DeleteTestUsers(t.Context())
+	usersPassword := "pass"
+	users, err := dummy.CreateUsers(qtx, 1, t, usersPassword)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,8 +142,8 @@ func TestLoginFlow(t *testing.T) {
 
 	runCases := []testCases{
 		{"login with bad pass", http.StatusUnauthorized, r_email_pass{Email: users[0].Email, Password: "bad"}, false},
-		{"login with bad email", http.StatusUnauthorized, r_email_pass{Email: "bad", Password: users[0].Password}, false},
-		{"login", http.StatusOK, r_email_pass{Email: users[0].Email, Password: users[0].Email}, true},
+		{"login with bad email", http.StatusUnauthorized, r_email_pass{Email: "bad", Password: usersPassword}, false},
+		{"login", http.StatusOK, r_email_pass{Email: users[0].Email, Password: usersPassword}, true},
 	}
 	for _, tt := range runCases {
 		t.Run(tt.title, func(t *testing.T) {
@@ -176,6 +178,141 @@ func TestLoginFlow(t *testing.T) {
 					t.Fatal("uuid ids does not match")
 				}
 			}
+		})
+	}
+}
+
+func TestSurveyCreation(t *testing.T) {
+	//db conn
+	db, err := dummy.GetDbConn()
+	if err != nil {
+		t.Fatal()
+	}
+	qtx := database.New(db)
+	defer qtx.DeleteTestUsers(t.Context())
+	//users created
+	usersPassword := "pass"
+	users, err := dummy.CreateUsers(qtx, 1, t, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// json request loaded
+	data, err := dummy.GetJsonTest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var testjson testJson
+	err = json.Unmarshal(data, &testjson)
+	if err != nil {
+		t.Fatal(err)
+	}
+	//login user
+	accessToken, _, err := dummy.LoginUser(users[0].Email, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	type testCases struct {
+		title          string
+		statusCode     int
+		setAccessToken bool
+		badTypes       bool
+		setNoQuestions bool
+	}
+	runCases := []testCases{
+		{"create survey w/no access token", http.StatusUnauthorized, false, false, false},
+		{"create survey", http.StatusOK, true, false, false},
+		{"create survey bad types", http.StatusBadRequest, true, true, false},
+		{"create survey with no questions", http.StatusBadRequest, true, false, true},
+	}
+
+	for _, tt := range runCases {
+		t.Run(tt.title, func(t *testing.T) {
+			if tt.badTypes {
+				testjson.ClientCreateSurvey.Questions[0].Types = "bad"
+			}
+			if tt.setNoQuestions {
+				testjson.ClientCreateSurvey.Questions = nil
+			}
+			body, err := json.Marshal(testjson.ClientCreateSurvey)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/survey", bytes.NewBuffer(body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.setAccessToken {
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+			}
+			_, respStatusCode, respBody, err := sendRequest(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkingExpectedStatusCode(respStatusCode, respBody, tt.statusCode, t)
+
+		})
+	}
+}
+
+func TestServingSurvey(t *testing.T) {
+	//db conn
+	db, err := dummy.GetDbConn()
+	if err != nil {
+		t.Fatal()
+	}
+	qtx := database.New(db)
+	defer qtx.DeleteTestUsers(t.Context())
+	//users created
+	usersPassword := "pass"
+	users, err := dummy.CreateUsers(qtx, 2, t, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	//login user
+	accessToken0, _, err := dummy.LoginUser(users[0].Email, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accessToken1, _, err := dummy.LoginUser(users[1].Email, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create surveys
+	surveyIds, err := dummy.CreateSurvey(qtx, users, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	type testCases struct {
+		title      string
+		statusCode int
+		token      string
+		surveyId   string
+	}
+	runCases := []testCases{
+		{"no token", http.StatusUnauthorized, "", surveyIds[0].String()},
+		{"bad id", http.StatusNotFound, accessToken0, "f45646546218"},
+		{"no id", http.StatusNotFound, accessToken0, ""},
+		{"wrong user", http.StatusUnauthorized, accessToken1, surveyIds[0].String()},
+		{"wrong user 2", http.StatusUnauthorized, accessToken0, surveyIds[1].String()},
+		{"good", http.StatusOK, accessToken0, surveyIds[0].String()},
+	}
+
+	for _, tt := range runCases {
+		t.Run(tt.title, func(t *testing.T) {
+			url := fmt.Sprintf("http://localhost:8080/v0/survey/%s", tt.surveyId)
+			req, err := http.NewRequest(http.MethodGet, url, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.token != "" {
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tt.token))
+			}
+			_, respStatusCode, respBody, err := sendRequest(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkingExpectedStatusCode(respStatusCode, respBody, tt.statusCode, t)
 		})
 	}
 }

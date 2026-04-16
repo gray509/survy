@@ -12,6 +12,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type BulkCreateSurveyParams struct {
+	ID             uuid.UUID
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Title          string
+	UserID         uuid.UUID
+	ExpirationTime pgtype.Timestamptz
+	Indentified    bool
+	MaxResponse    pgtype.Int4
+}
+
 const createSurvey = `-- name: CreateSurvey :one
 INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, indentified, max_response)
 VALUES (
