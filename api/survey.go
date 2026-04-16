@@ -25,6 +25,7 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 			Types      QuestionTypes `json:"types"`
 			IsRequired bool          `json:"required"`
 			Options    struct {
+				Answers []string `json:"answers"`
 			} `json:"options,omitempty"`
 		} `json:"questions"`
 	}

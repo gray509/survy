@@ -10,10 +10,7 @@
 			"types" : "multi-choice",
 			"required": true,
 			"options": {
-				"0":"",
-				"1":"",
-				"2":"",
-				"3":""
+				"answers": ["whast", "dasd", "fsdfsfds", "lalala", "lolololo"]
 			}
 		},
 		{
@@ -21,10 +18,7 @@
 			"types" : "single-choice",
 			"required": true,
 			"options": {
-				"0":"",
-				"1":"",
-				"2":"",
-				"3":""
+				"answers": ["whast", "dasd", "fsdfsfds"]
 			}
 
 		},
@@ -33,7 +27,7 @@
 			"types" : "rating",
 			"required": true,
 			"options": {
-				"0":5
+				"answers": ["0", "5"]
 			}
 		},
 		{
@@ -46,10 +40,7 @@
 			"types" : "ranking",
 			"required": true,
 			"options": {
-				"0":"",
-				"1":"",
-				"2":"",
-				"3":""
+				"answers": ["", "", ""]
 			}
 		},
 		{

@@ -43,6 +43,7 @@ type testJson struct {
 			Types      string `json:"types"`
 			IsRequired bool   `json:"required"`
 			Options    struct {
+				Answers []string `json:"answers"`
 			} `json:"options,omitempty"`
 		} `json:"questions"`
 	} `json:"r_create_Survey"`

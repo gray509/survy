@@ -25,6 +25,7 @@ type testJson struct {
 			Types      string `json:"types"`
 			IsRequired bool   `json:"required"`
 			Options    struct {
+				Answers []string `json:"answers"`
 			} `json:"options,omitempty"`
 		} `json:"questions"`
 	} `json:"r_create_Survey"`
@@ -261,9 +262,9 @@ func TestServingSurvey(t *testing.T) {
 		t.Fatal()
 	}
 	qtx := database.New(db)
-	defer qtx.DeleteTestUsers(t.Context())
+	//defer qtx.DeleteTestUsers(t.Context())
 	//users created
-	usersPassword := "pass"
+	usersPassword := "psssaass"
 	users, err := dummy.CreateUsers(qtx, 2, t, usersPassword)
 	if err != nil {
 		t.Fatal(err)
