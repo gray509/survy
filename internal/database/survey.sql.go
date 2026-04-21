@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -91,4 +92,20 @@ func (q *Queries) GetSurveyByIdUserId(ctx context.Context, arg GetSurveyByIdUser
 		&i.UserID,
 	)
 	return i, err
+}
+
+const setIsPublish = `-- name: SetIsPublish :execresult
+UPDATE surveys
+SET is_published = $1
+WHERE id = $2 AND user_id = $3
+`
+
+type SetIsPublishParams struct {
+	IsPublished bool
+	ID          uuid.UUID
+	UserID      uuid.UUID
+}
+
+func (q *Queries) SetIsPublish(ctx context.Context, arg SetIsPublishParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, setIsPublish, arg.IsPublished, arg.ID, arg.UserID)
 }

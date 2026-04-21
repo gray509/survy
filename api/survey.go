@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -175,4 +176,52 @@ func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 			MaxResponse:    int(survey.MaxResponse.Int32),
 		},
 	})
+}
+
+// POST /v0/publish/
+func (cfg *apiConfig) PublishSurvey(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		SurveyId uuid.UUID `json:"survey_id"`
+		Enable   bool      `json:"enable"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "Couldn't decode parameters // POST /v0/publish/", err)
+		return
+	}
+
+	// authorization
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error getting header jwt token // POST /v0/publish/", err)
+		return
+	}
+	userId, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error validating token // POST /v0/publish/", err)
+		return
+	}
+	log.Println(userId.String(), "//publish")
+	q := database.New(cfg.db)
+	row, err := q.SetIsPublish(r.Context(), database.SetIsPublishParams{UserID: userId, ID: params.SurveyId, IsPublished: params.Enable})
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "Error with db conn  // POST /v0/publish/", err)
+		return
+	}
+	if row.RowsAffected() == 0 {
+		resWithErr(w, http.StatusUnauthorized, "Error setting publish flag  // POST /v0/publish/", fmt.Errorf("no rows were affected"))
+		return
+	}
+
+	surveyUrl := ""
+	if params.Enable == true {
+		surveyUrl = fmt.Sprintf("http://localhost:8080/v0/%s", params.SurveyId.String())
+	}
+	type response struct {
+		SurveyUrl string `json:"survey_url"`
+	}
+	respondWithJSON(w, http.StatusOK, response{SurveyUrl: surveyUrl})
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"testing"
 	"time"
@@ -262,7 +263,7 @@ func TestServingSurvey(t *testing.T) {
 		t.Fatal()
 	}
 	qtx := database.New(db)
-	//defer qtx.DeleteTestUsers(t.Context())
+	defer qtx.DeleteTestUsers(t.Context())
 	//users created
 	usersPassword := "psssaass"
 	users, err := dummy.CreateUsers(qtx, 2, t, usersPassword)
@@ -314,6 +315,91 @@ func TestServingSurvey(t *testing.T) {
 				t.Fatal(err)
 			}
 			checkingExpectedStatusCode(respStatusCode, respBody, tt.statusCode, t)
+		})
+	}
+}
+
+func TestSetPublish(t *testing.T) {
+	//db conn
+	db, err := dummy.GetDbConn()
+	if err != nil {
+		t.Fatal()
+	}
+	qtx := database.New(db)
+	//defer qtx.DeleteTestUsers(t.Context())
+	//users created
+	usersPassword := "psssaass"
+	users, err := dummy.CreateUsers(qtx, 2, t, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	//login user
+	accessToken0, _, err := dummy.LoginUser(users[0].Email, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accessToken1, _, err := dummy.LoginUser(users[1].Email, usersPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// create surveys
+	surveyIds, err := dummy.CreateSurvey(qtx, users, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	type parameters struct {
+		SurveyId uuid.UUID `json:"survey_id"`
+		Enable   bool      `json:"enable"`
+	}
+	type testCases struct {
+		title         string
+		statusCode    int
+		token         string
+		publish       parameters
+		surveyUrl     string
+		checkResponse bool
+	}
+	type response struct {
+		SurveyUrl string `json:"survey_url"`
+	}
+	var url response
+	log.Println(surveyIds[0])
+	log.Println(surveyIds[1])
+	runCases := []testCases{
+		{"publish true", http.StatusOK, accessToken0, parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[0].String()), true},
+		{"publish false", http.StatusOK, accessToken0, parameters{SurveyId: surveyIds[0], Enable: false}, "", false},
+		{"no token", http.StatusUnauthorized, "", parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[0].String()), true},
+		{"wrong token", http.StatusUnauthorized, accessToken1, parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[0].String()), true},
+		{"publish false 2", http.StatusOK, accessToken1, parameters{SurveyId: surveyIds[1], Enable: false}, "", false},
+		{"publish true 2", http.StatusOK, accessToken1, parameters{SurveyId: surveyIds[1], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[1].String()), true},
+	}
+	for _, tt := range runCases {
+		t.Run(tt.title, func(t *testing.T) {
+			body, err := json.Marshal(tt.publish)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req, err := http.NewRequest(http.MethodPost, "http://localhost:8080/v0/publish", bytes.NewBuffer(body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tt.token))
+			_, respStatusCode, respBody, err := sendRequest(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			checkingExpectedStatusCode(respStatusCode, respBody, tt.statusCode, t)
+			if tt.checkResponse {
+				err = json.Unmarshal(respBody, &url)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if url.SurveyUrl != tt.surveyUrl {
+					t.Fatalf("response does not match")
+				}
+			}
 		})
 	}
 }

@@ -29,4 +29,9 @@ Select *
 FROM surveys
 WHERE surveys.id = $1 AND surveys.user_id = $2;
 
+-- name: SetIsPublish :execresult
+UPDATE surveys
+SET is_published = $1
+WHERE id = $2 AND user_id = $3;
+
 
