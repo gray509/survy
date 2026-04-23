@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gray509/survy/api"
+	"github.com/gray509/survy/server/api"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 )

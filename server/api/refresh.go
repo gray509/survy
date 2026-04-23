@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gray509/survy/internal/auth"
-	"github.com/gray509/survy/internal/database"
+	"github.com/gray509/survy/server/internal/auth"
+	"github.com/gray509/survy/server/internal/database"
 )
 
 // "POST /v0/refresh"

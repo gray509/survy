@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gray509/survy/internal/database"
+	"github.com/gray509/survy/server/internal/database"
 )
 
 // "POST /admin/reset"

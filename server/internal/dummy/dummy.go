@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gray509/survy/internal/auth"
-	"github.com/gray509/survy/internal/database"
-	"github.com/gray509/survy/internal/querieutils"
+	"github.com/gray509/survy/server/internal/auth"
+	"github.com/gray509/survy/server/internal/database"
+	"github.com/gray509/survy/server/internal/querieutils"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 )

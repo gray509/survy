@@ -1,4 +1,4 @@
-module github.com/gray509/survy
+module github.com/gray509/survy/server
 
 go 1.25.0
 
