@@ -39,7 +39,7 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now()
 	timestamptz := querieutils.Time(&now)
-	user, err := q.CreateUser(r.Context(), database.CreateUserParams{
+	_, err = q.CreateUser(r.Context(), database.CreateUserParams{
 		ID:        uuid.New(),
 		CreatedAt: timestamptz,
 		UpdatedAt: timestamptz,
@@ -51,11 +51,7 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, User{
-		ID:        user.ID,
-		CreatedAt: now,
-		UpdatedAt: now,
-		Email:     user.Email,
-	})
+	//http.SetCookie(w, )
+	respondWithJSON(w, http.StatusCreated, nil)
 
 }

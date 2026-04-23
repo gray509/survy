@@ -10,13 +10,17 @@ import (
 
 // "POST /v0/refresh"
 func (cfg *apiConfig) Refresh(w http.ResponseWriter, r *http.Request) {
-	client_refresh_token, err := auth.GetBearerToken(r.Header)
+	cook, err := r.Cookie("refresh_token")
 	if err != nil {
-		resWithErr(w, http.StatusBadRequest, "could get refresh token", err)
+		resWithErr(w, http.StatusBadRequest, "refresh token cookie missing", err)
 		return
 	}
 
-	token_hash, err := auth.Hash(client_refresh_token)
+	if time.Now().After(cook.Expires) {
+		resWithErr(w, http.StatusBadRequest, "refresh token expired", err)
+		return
+	}
+	token_hash, err := auth.Hash(cook.Value)
 	q := database.New(cfg.db)
 	user, err := q.GetUserFromRefreshToken(r.Context(), token_hash)
 	if err != nil {

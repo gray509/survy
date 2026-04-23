@@ -37,12 +37,11 @@ type r_email_pass struct {
 	Password string `json:"password"`
 }
 type resp_login struct {
-	Id           uuid.UUID `json:"id"`
-	CreateAt     time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Email        string    `json:"email"`
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token"`
+	Id          uuid.UUID `json:"id"`
+	CreateAt    time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Email       string    `json:"email"`
+	AccessToken string    `json:"access_token"`
 }
 
 func checkingExpectedStatusCode(statusCode int, respBody []byte, expectedCode int, t *testing.T) {
@@ -172,9 +171,6 @@ func TestLoginFlow(t *testing.T) {
 				}
 				if loginResp.AccessToken == "" {
 					t.Fatal("nil access token")
-				}
-				if loginResp.RefreshToken == "" {
-					t.Fatal("nil refresh token")
 				}
 				if loginResp.Id != users[0].ID {
 					t.Fatal("uuid ids does not match")

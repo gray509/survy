@@ -118,7 +118,7 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /v0/survey/{surveyId}
-func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) GetSurvey(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		Survey
 		questions []Questions

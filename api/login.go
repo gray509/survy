@@ -21,8 +21,7 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 
 	type response struct {
 		User
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
+		AccessToken string `json:"access_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -65,6 +64,14 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 		resWithErr(w, http.StatusInternalServerError, "Could't save refresh token // POST /v0/login", err)
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		Secure:   false, // use false only in local dev if needed
+		SameSite: http.SameSiteStrictMode,
+		Expires:  *expires_at,
+	})
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:        user.ID,
@@ -72,7 +79,6 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 			UpdatedAt: user.UpdatedAt.Time,
 			Email:     user.Email,
 		},
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		AccessToken: accessToken,
 	})
 }
