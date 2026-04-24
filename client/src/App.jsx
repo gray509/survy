@@ -1,20 +1,25 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {Routes, Route, useNavigate, Navigate } from "react-router-dom";
 
 export default function App() {
-  const [accessToken, setAccessToken] = useState("")
+  const [accessToken, setAccessToken] = useState(null)
+  //const navigate = useNavigate()
   useEffect(() => {
+    let called = false; //dev 
     async function refreshSession() {
+      if (called) return;//dev
+      called = true; //dev
       try {
-        const res = await fetch("http://localhost:8080/v0/refresh", {
+        const res = await fetch("/v0/refresh", {
           method: "POST",
           credentials: "include",
         });
-
-        const data = await res.json();
-        if (res.ok) {
-          setAccessToken(data.accessToken);
+        if (!res.ok) {
+          setAccessToken("");// unauthenticated
+          return;
         }
+        const data = await res.json();
+        setAccessToken(data.access_token); // authenticated
       } catch (err) {
         console.log("No session");
       }
@@ -24,12 +29,10 @@ export default function App() {
   }, []);
   return (
     <>
-    <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home accessToken={accessToken} />} />
-        <Route path="/login" element={<Login setAccessToken={setAccessToken} />} />
-      </Routes>
-    </BrowserRouter>
+        <Route path="/login" element={accessToken ? <Navigate to="/" /> : <Login setAccessToken={setAccessToken}/>} />
+      </Routes> 
     </>
     
   );
@@ -38,13 +41,13 @@ export default function App() {
 function Login({setAccessToken}){
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const navigate = useNavigate();
-
+  const navigate = useNavigate()
+  
   async function handleSubmit(e) {
     e.preventDefault();
     // send to backend
     try{
-      const res = await fetch("http://localhost:8080/v0/login", {
+      const res = await fetch("/v0/login", {
         method: "POST",
         headers: {
         'Content-Type': 'application/json',
@@ -62,9 +65,9 @@ function Login({setAccessToken}){
         updatedAt: data.updated_at,
         email: data.email,
       }
-      setAccessToken(data.accessToken);
-      sessionStorage.setItem("userInfo", JSON.stringify(user))
-      navigate("/")
+      setAccessToken(data.access_token);
+      sessionStorage.setItem("userInfo", JSON.stringify(user));
+      navigate("/");
     } 
     catch(error){
       alert(`Error: ${error.message}`)
@@ -77,7 +80,7 @@ function Login({setAccessToken}){
     e.preventDefault();
     // send to backend
     try{
-      const res = await fetch("http://localhost:8080/v0/signup", {
+      const res = await fetch("/v0/signup", {
         method: "POST",
         headers: {
         'Content-Type': 'application/json',
@@ -88,8 +91,7 @@ function Login({setAccessToken}){
       if (!res.ok) {
         throw new Error(`Failed to create user: ${data.error}`);
       }
-
-      alert("Account created. Now Sign In")
+      navigate("/");
 
     } 
     catch(error){
@@ -99,6 +101,8 @@ function Login({setAccessToken}){
 
   return (
      <form className="floating-form" onSubmit={handleSubmit}>
+      test@test.com
+      pass
       <h2>Login</h2>
 
       <div className="input-group">
@@ -127,7 +131,11 @@ function Login({setAccessToken}){
 }
 
 function Home({accessToken}){
-  if (!accessToken) {
+  if (accessToken === null) {
+    return <div>Loading...</div>;
+  }
+
+  if (accessToken === "") {
     return <Navigate to="/login" />;
   }
 
