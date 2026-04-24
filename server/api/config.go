@@ -4,7 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/gray509/survy/server/internal/database"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type QuestionTypes string
@@ -20,18 +21,20 @@ const (
 )
 
 type apiConfig struct {
-	db        *pgx.Conn
+	db        *pgxpool.Pool
 	port      string
 	platform  string
 	jwtSecret string
+	q         *database.Queries
 }
 
-func NewConfig(db *pgx.Conn, port, platform, jwtSecret string) *apiConfig {
+func NewConfig(db *pgxpool.Pool, port, platform, jwtSecret string) *apiConfig {
 	return &apiConfig{
 		db:        db,
 		port:      port,
 		platform:  platform,
 		jwtSecret: jwtSecret,
+		q:         database.New(db),
 	}
 }
 

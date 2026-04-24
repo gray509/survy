@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -82,11 +83,20 @@ func MakeRefreshToken() (string, string, *time.Time, *time.Time, error) {
 	token := make([]byte, 32)
 	rand.Read(token)
 	hexToken := hex.EncodeToString(token)
-	hash, err := Hash(hexToken)
+	hash, err := DeterHash(hexToken)
 	if err != nil {
 		return "", "", nil, nil, err
 	}
 	create_at := time.Now()
 	expires_at := create_at.Add(time.Hour * 24 * 2)
 	return hexToken, hash, &create_at, &expires_at, nil
+}
+
+func DeterHash(s string) (string, error) {
+	hash := sha256.New()
+	_, err := hash.Write([]byte(s))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }

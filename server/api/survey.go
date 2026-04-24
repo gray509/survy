@@ -61,8 +61,8 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 	// proocessing to db
 	now := time.Now()
 	timestamptz := querieutils.Time(&now)
-	q := database.New(cfg.db)
-	surveyId, err := q.CreateSurvey(r.Context(), database.CreateSurveyParams{
+
+	surveyId, err := cfg.q.CreateSurvey(r.Context(), database.CreateSurveyParams{
 		ID:             uuid.New(),
 		CreatedAt:      timestamptz,
 		UpdatedAt:      timestamptz,
@@ -106,7 +106,7 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	_, err = q.QuestionsBulkInsert(context.Background(), questions)
+	_, err = cfg.q.QuestionsBulkInsert(context.Background(), questions)
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "couldn't save questions to db // POST /v0/survey", err)
 		return
@@ -138,14 +138,14 @@ func (cfg *apiConfig) GetSurvey(w http.ResponseWriter, r *http.Request) {
 		resWithErr(w, http.StatusNotFound, "err with uuid // GET /v0/survey/{surveyId}", err)
 		return
 	}
-	q := database.New(cfg.db)
-	survey, err := q.GetSurveyByIdUserId(r.Context(), database.GetSurveyByIdUserIdParams{ID: urlSurveyId, UserID: userId})
+
+	survey, err := cfg.q.GetSurveyByIdUserId(r.Context(), database.GetSurveyByIdUserIdParams{ID: urlSurveyId, UserID: userId})
 	if err != nil {
 		resWithErr(w, http.StatusUnauthorized, "Error retrieving survey // GET /v0/survey/{surveyId}", err)
 		return
 	}
 
-	questions, err := q.GetQuestionBySurveyId(r.Context(), survey.ID)
+	questions, err := cfg.q.GetQuestionBySurveyId(r.Context(), survey.ID)
 	var responseQuestions []Questions
 	var options Options
 	for _, q := range questions {
@@ -205,8 +205,8 @@ func (cfg *apiConfig) PublishSurvey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(userId.String(), "//publish")
-	q := database.New(cfg.db)
-	row, err := q.SetIsPublish(r.Context(), database.SetIsPublishParams{UserID: userId, ID: params.SurveyId, IsPublished: params.Enable})
+
+	row, err := cfg.q.SetIsPublish(r.Context(), database.SetIsPublishParams{UserID: userId, ID: params.SurveyId, IsPublished: params.Enable})
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "Error with db conn  // POST /v0/publish/", err)
 		return

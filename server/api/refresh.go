@@ -5,36 +5,39 @@ import (
 	"time"
 
 	"github.com/gray509/survy/server/internal/auth"
-	"github.com/gray509/survy/server/internal/database"
 )
 
 // "POST /v0/refresh"
 func (cfg *apiConfig) Refresh(w http.ResponseWriter, r *http.Request) {
+	type respnse struct {
+		AccessToken string `json:"access_token"`
+	}
 	cook, err := r.Cookie("refresh_token")
 	if err != nil {
 		resWithErr(w, http.StatusBadRequest, "refresh token cookie missing", err)
 		return
 	}
 
-	if time.Now().After(cook.Expires) {
-		resWithErr(w, http.StatusBadRequest, "refresh token expired", err)
+	token_hash, err := auth.DeterHash(cook.Value)
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "error couldn't verify token", err)
 		return
 	}
-	token_hash, err := auth.Hash(cook.Value)
-	q := database.New(cfg.db)
-	user, err := q.GetUserFromRefreshToken(r.Context(), token_hash)
+	userId, err := cfg.q.GetUserFromRefreshToken(r.Context(), token_hash)
 	if err != nil {
 		resWithErr(w, http.StatusUnauthorized, "error retrieving refresh token", err)
 		return
 	}
 
-	accessToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
+	accessToken, err := auth.MakeJWT(userId, cfg.jwtSecret, time.Hour)
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "error couldn't make access token", err)
 		return
 	}
-
-	respondWithJSON(w, http.StatusOK, accessToken)
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	respondWithJSON(w, http.StatusOK, respnse{
+		AccessToken: accessToken,
+	})
 }
 
 // "POST /v0/revoke"
@@ -46,8 +49,8 @@ func (cfg *apiConfig) Revoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token_hash, err := auth.Hash(client_refresh_token)
-	q := database.New(cfg.db)
-	err = q.RevokeRefreshToken(r.Context(), token_hash)
+
+	err = cfg.q.RevokeRefreshToken(r.Context(), token_hash)
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "Couldn't revoke session", err)
 		return

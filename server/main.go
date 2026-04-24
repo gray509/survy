@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gray509/survy/server/api"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
@@ -18,7 +18,7 @@ func main() {
 	platform := os.Getenv("PLATFORM")
 	jwtSecret := os.Getenv("JWT_SECRET")
 
-	db, err := pgx.Connect(context.Background(), dbURL)
+	db, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}

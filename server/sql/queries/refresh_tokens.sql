@@ -14,8 +14,8 @@ SET revoked_at = NOW()
 WHERE token_hash = $1;
 
 -- name: GetUserFromRefreshToken :one
-SELECT users.*
-FROM refresh_tokens JOIN users ON users.id = refresh_token.user_id
-WHERE refresh_tokens.token_hash = $1
-AND refresh_tokens.revoked_at = NUll
-AND refresh_tokens.expires_at > NOW();
+SELECT user_id
+FROM refresh_tokens
+WHERE token_hash = $1
+AND revoked_at is NULL
+AND expires_at > NOW();

@@ -31,9 +31,8 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 		resWithErr(w, http.StatusInternalServerError, "Couldn't decode request Json // POST /v0/login ", err)
 		return
 	}
-	q := database.New(cfg.db)
 	//GET USER FROM DB
-	user, err := q.GetUserByEmail(r.Context(), emailPass.Email)
+	user, err := cfg.q.GetUserByEmail(r.Context(), emailPass.Email)
 	if err != nil {
 		log.Println(emailPass.Email)
 		resWithErr(w, http.StatusUnauthorized, "Incorrect email // POST /v0/login", err)
@@ -52,7 +51,7 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refreshToken, hash, create_at, expires_at, err := auth.MakeRefreshToken()
-	err = q.AddRefreshToken(r.Context(), database.AddRefreshTokenParams{
+	err = cfg.q.AddRefreshToken(r.Context(), database.AddRefreshTokenParams{
 		ID:        uuid.New(),
 		TokenHash: hash,
 		UserID:    user.ID,
