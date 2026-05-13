@@ -1,5 +1,5 @@
 -- name: CreateSurvey :one
-INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, indentified, max_response)
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response, questions)
 VALUES (
     $1,
     $2,
@@ -13,7 +13,7 @@ VALUES (
 RETURNING id;
 
 -- name: BulkCreateSurvey :copyfrom
-INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, indentified, max_response)
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response, questions)
 VALUES (
     $1,
     $2,
@@ -34,4 +34,8 @@ UPDATE surveys
 SET is_published = $1
 WHERE id = $2 AND user_id = $3;
 
-
+-- name: GetAllUserSurveys :many
+Select *
+FROM surveys
+WHERE user_id = $1
+ORDER BY updated_at asc;

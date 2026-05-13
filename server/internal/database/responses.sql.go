@@ -14,27 +14,25 @@ import (
 )
 
 const createResponse = `-- name: CreateResponse :one
-INSERT INTO responses (id, created_at, updated_at, response, surveys_id, questions_id, voter_id)
+INSERT INTO responses (id, created_at, updated_at, response, survey_id, voter_id)
 VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6,
-    $7
+    $6
 )
-RETURNING id, created_at, updated_at, response, questions_id, voter_id, surveys_id
+RETURNING id, created_at, updated_at, response, voter_id, survey_id
 `
 
 type CreateResponseParams struct {
-	ID          uuid.UUID
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
-	Response    json.RawMessage
-	SurveysID   uuid.UUID
-	QuestionsID uuid.UUID
-	VoterID     uuid.UUID
+	ID        uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Response  json.RawMessage
+	SurveyID  uuid.UUID
+	VoterID   uuid.UUID
 }
 
 func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) (Response, error) {
@@ -43,8 +41,7 @@ func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) 
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Response,
-		arg.SurveysID,
-		arg.QuestionsID,
+		arg.SurveyID,
 		arg.VoterID,
 	)
 	var i Response
@@ -53,9 +50,8 @@ func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Response,
-		&i.QuestionsID,
 		&i.VoterID,
-		&i.SurveysID,
+		&i.SurveyID,
 	)
 	return i, err
 }

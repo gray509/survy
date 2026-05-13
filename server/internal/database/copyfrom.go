@@ -35,8 +35,8 @@ func (r iteratorForBulkCreateSurvey) Values() ([]interface{}, error) {
 		r.rows[0].Title,
 		r.rows[0].UserID,
 		r.rows[0].ExpirationTime,
-		r.rows[0].Indentified,
 		r.rows[0].MaxResponse,
+		r.rows[0].Questions,
 	}, nil
 }
 
@@ -45,7 +45,7 @@ func (r iteratorForBulkCreateSurvey) Err() error {
 }
 
 func (q *Queries) BulkCreateSurvey(ctx context.Context, arg []BulkCreateSurveyParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"surveys"}, []string{"id", "created_at", "updated_at", "title", "user_id", "expiration_time", "indentified", "max_response"}, &iteratorForBulkCreateSurvey{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"surveys"}, []string{"id", "created_at", "updated_at", "title", "user_id", "expiration_time", "max_response", "questions"}, &iteratorForBulkCreateSurvey{rows: arg})
 }
 
 // iteratorForBulkCreateUser implements pgx.CopyFromSource.
@@ -82,43 +82,4 @@ func (r iteratorForBulkCreateUser) Err() error {
 
 func (q *Queries) BulkCreateUser(ctx context.Context, arg []BulkCreateUserParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"users"}, []string{"id", "created_at", "updated_at", "email", "password"}, &iteratorForBulkCreateUser{rows: arg})
-}
-
-// iteratorForQuestionsBulkInsert implements pgx.CopyFromSource.
-type iteratorForQuestionsBulkInsert struct {
-	rows                 []QuestionsBulkInsertParams
-	skippedFirstNextCall bool
-}
-
-func (r *iteratorForQuestionsBulkInsert) Next() bool {
-	if len(r.rows) == 0 {
-		return false
-	}
-	if !r.skippedFirstNextCall {
-		r.skippedFirstNextCall = true
-		return true
-	}
-	r.rows = r.rows[1:]
-	return len(r.rows) > 0
-}
-
-func (r iteratorForQuestionsBulkInsert) Values() ([]interface{}, error) {
-	return []interface{}{
-		r.rows[0].ID,
-		r.rows[0].CreatedAt,
-		r.rows[0].UpdatedAt,
-		r.rows[0].Title,
-		r.rows[0].Types,
-		r.rows[0].IsRequired,
-		r.rows[0].SurveysID,
-		r.rows[0].Options,
-	}, nil
-}
-
-func (r iteratorForQuestionsBulkInsert) Err() error {
-	return nil
-}
-
-func (q *Queries) QuestionsBulkInsert(ctx context.Context, arg []QuestionsBulkInsertParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"questions"}, []string{"id", "created_at", "updated_at", "title", "types", "is_required", "surveys_id", "options"}, &iteratorForQuestionsBulkInsert{rows: arg})
 }

@@ -33,6 +33,5 @@ SELECT EXISTS (
   WHERE email = $1
 );
 
-
 -- name: DeleteTestUsers :exec
 DELETE FROM users WHERE email LIKE 'user%@testsurvy.com';

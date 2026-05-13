@@ -11,17 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Question struct {
-	ID         uuid.UUID
-	CreatedAt  pgtype.Timestamptz
-	UpdatedAt  pgtype.Timestamptz
-	Title      string
-	Options    *json.RawMessage
-	IsRequired bool
-	Types      string
-	SurveysID  uuid.UUID
-}
-
 type RefreshToken struct {
 	ID        uuid.UUID
 	TokenHash string
@@ -32,33 +21,33 @@ type RefreshToken struct {
 }
 
 type Response struct {
-	ID          uuid.UUID
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
-	Response    json.RawMessage
-	QuestionsID uuid.UUID
-	VoterID     uuid.UUID
-	SurveysID   uuid.UUID
+	ID        uuid.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Response  json.RawMessage
+	VoterID   uuid.UUID
+	SurveyID  uuid.UUID
 }
 
 type Survey struct {
 	ID             uuid.UUID
+	UserID         uuid.UUID
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	Title          string
 	ExpirationTime pgtype.Timestamptz
-	Indentified    bool
 	MaxResponse    pgtype.Int4
 	IsPublished    bool
-	UserID         uuid.UUID
+	Questions      json.RawMessage
 }
 
 type User struct {
-	ID        uuid.UUID
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Email     string
-	Password  string
+	ID           uuid.UUID
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	Email        string
+	Password     string
+	RefreshToken pgtype.Text
 }
 
 type Voter struct {

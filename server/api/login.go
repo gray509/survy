@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -34,7 +33,6 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 	//GET USER FROM DB
 	user, err := cfg.q.GetUserByEmail(r.Context(), emailPass.Email)
 	if err != nil {
-		log.Println(emailPass.Email)
 		resWithErr(w, http.StatusUnauthorized, "Incorrect email // POST /v0/login", err)
 		return
 	}
@@ -67,10 +65,11 @@ func (cfg *apiConfig) Login(w http.ResponseWriter, r *http.Request) {
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		HttpOnly: true,
-		Secure:   false, // use false only in local dev if needed
+		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		Expires:  *expires_at,
 	})
+
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:        user.ID,

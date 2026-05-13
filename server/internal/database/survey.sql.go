@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -20,12 +21,12 @@ type BulkCreateSurveyParams struct {
 	Title          string
 	UserID         uuid.UUID
 	ExpirationTime pgtype.Timestamptz
-	Indentified    bool
 	MaxResponse    pgtype.Int4
+	Questions      json.RawMessage
 }
 
 const createSurvey = `-- name: CreateSurvey :one
-INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, indentified, max_response)
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response, questions)
 VALUES (
     $1,
     $2,
@@ -46,8 +47,8 @@ type CreateSurveyParams struct {
 	Title          string
 	UserID         uuid.UUID
 	ExpirationTime pgtype.Timestamptz
-	Indentified    bool
 	MaxResponse    pgtype.Int4
+	Questions      json.RawMessage
 }
 
 func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (uuid.UUID, error) {
@@ -58,16 +59,53 @@ func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (uui
 		arg.Title,
 		arg.UserID,
 		arg.ExpirationTime,
-		arg.Indentified,
 		arg.MaxResponse,
+		arg.Questions,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
 
+const getAllUserSurveys = `-- name: GetAllUserSurveys :many
+Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published, questions
+FROM surveys
+WHERE user_id = $1
+ORDER BY updated_at asc
+`
+
+func (q *Queries) GetAllUserSurveys(ctx context.Context, userID uuid.UUID) ([]Survey, error) {
+	rows, err := q.db.Query(ctx, getAllUserSurveys, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Survey
+	for rows.Next() {
+		var i Survey
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.ExpirationTime,
+			&i.MaxResponse,
+			&i.IsPublished,
+			&i.Questions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getSurveyByIdUserId = `-- name: GetSurveyByIdUserId :one
-Select id, created_at, updated_at, title, expiration_time, indentified, max_response, is_published, user_id
+Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published, questions
 FROM surveys
 WHERE surveys.id = $1 AND surveys.user_id = $2
 `
@@ -82,14 +120,14 @@ func (q *Queries) GetSurveyByIdUserId(ctx context.Context, arg GetSurveyByIdUser
 	var i Survey
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Title,
 		&i.ExpirationTime,
-		&i.Indentified,
 		&i.MaxResponse,
 		&i.IsPublished,
-		&i.UserID,
+		&i.Questions,
 	)
 	return i, err
 }

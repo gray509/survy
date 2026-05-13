@@ -35,6 +35,7 @@ func main() {
 	mux.HandleFunc("POST /v0/signup", apicfg.CreateUser)
 	mux.HandleFunc("POST /v0/survey", apicfg.CreateSurvey)
 	mux.HandleFunc("GET /v0/survey/{surveyId}", apicfg.GetSurvey)
+	mux.HandleFunc("GET /v0/survey/", apicfg.GetUserSurveys)
 	mux.HandleFunc("POST /v0/publish", apicfg.PublishSurvey)
 
 	srv := &http.Server{

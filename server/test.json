@@ -7,7 +7,7 @@
 	"questions": [
 		{
 			"title": "multiple",
-			"types" : "multi-choice",
+			"types" : "checkbox",
 			"required": true,
 			"options": {
 				"answers": ["whast", "dasd", "fsdfsfds", "lalala", "lolololo"]
@@ -15,7 +15,7 @@
 		},
 		{
 			"title": "single",
-			"types" : "single-choice",
+			"types" : "radio",
 			"required": true,
 			"options": {
 				"answers": ["whast", "dasd", "fsdfsfds"]

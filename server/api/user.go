@@ -50,7 +50,6 @@ func (cfg *apiConfig) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//http.SetCookie(w, )
 	respondWithJSON(w, http.StatusCreated, nil)
 
 }

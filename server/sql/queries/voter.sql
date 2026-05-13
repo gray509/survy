@@ -1,5 +1,5 @@
 -- name: CreateVoter :one
-INSERT INTO voter (id, created_at, updated_at, ip, hash)
+INSERT INTO voters (id, created_at, updated_at, ip, hash)
 VALUES (
     $1,
     $2,

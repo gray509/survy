@@ -9,15 +9,15 @@ import (
 )
 
 type QuestionTypes string
-type Options map[string]interface{}
+type QuestionsMap map[string]interface{}
 
 const (
-	MultiChoice  QuestionTypes = "multi-choice"
-	SingleChoice QuestionTypes = "single-choice"
-	Rating       QuestionTypes = "rating"
-	YesNo        QuestionTypes = "yes/no"
-	Ranking      QuestionTypes = "ranking"
-	OpenText     QuestionTypes = "open"
+	Checkbox QuestionTypes = "checkbox"
+	Radio    QuestionTypes = "radio"
+	Rating   QuestionTypes = "rating"
+	YesNo    QuestionTypes = "yes/no"
+	Ranking  QuestionTypes = "ranking"
+	OpenText QuestionTypes = "open"
 )
 
 type apiConfig struct {
@@ -53,11 +53,4 @@ type Survey struct {
 	ExpirationTime time.Time `json:"expiration_time"`
 	Identified     bool      `json:"identified"`
 	MaxResponse    int       `json:"max_response"`
-}
-
-type Questions struct {
-	Title      string        `json:"title"`
-	Types      QuestionTypes `json:"types"`
-	IsRequired bool          `json:"is_required"`
-	Options    Options       `json:"options"`
 }
