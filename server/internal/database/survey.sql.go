@@ -104,6 +104,29 @@ func (q *Queries) GetAllUserSurveys(ctx context.Context, userID uuid.UUID) ([]Su
 	return items, nil
 }
 
+const getSurveyByIdIsPublish = `-- name: GetSurveyByIdIsPublish :one
+Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published, questions
+FROM surveys
+WHERE surveys.id = $1 AND is_published
+`
+
+func (q *Queries) GetSurveyByIdIsPublish(ctx context.Context, id uuid.UUID) (Survey, error) {
+	row := q.db.QueryRow(ctx, getSurveyByIdIsPublish, id)
+	var i Survey
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Title,
+		&i.ExpirationTime,
+		&i.MaxResponse,
+		&i.IsPublished,
+		&i.Questions,
+	)
+	return i, err
+}
+
 const getSurveyByIdUserId = `-- name: GetSurveyByIdUserId :one
 Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published, questions
 FROM surveys

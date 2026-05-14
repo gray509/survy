@@ -39,3 +39,9 @@ Select *
 FROM surveys
 WHERE user_id = $1
 ORDER BY updated_at asc;
+
+-- name: GetSurveyByIdIsPublish :one
+Select *
+FROM surveys
+WHERE surveys.id = $1 AND is_published;
+

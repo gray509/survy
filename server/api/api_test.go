@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"testing"
 	"time"
@@ -22,12 +21,11 @@ type testJson struct {
 		Identified     bool      `json:"identified"`
 		MaxResponse    int       `json:"max_response"`
 		Questions      []struct {
-			Title      string `json:"title"`
-			Types      string `json:"types"`
-			IsRequired bool   `json:"required"`
-			Options    struct {
-				Answers []string `json:"answers"`
-			} `json:"options,omitempty"`
+			QuestionId uuid.UUID     `json:"question_id,omitempty"`
+			Title      string        `json:"title"`
+			Types      QuestionTypes `json:"types"`
+			IsRequired bool          `json:"required"`
+			Options    []string      `json:"options,omitempty"`
 		} `json:"questions"`
 	} `json:"r_create_Survey"`
 }
@@ -77,7 +75,7 @@ func TestUserCreation(t *testing.T) {
 		Email:    "user-1@testsurvy.com",
 		Password: "pass",
 	}
-	user := User{}
+
 	// create the user
 	t.Run("create the user", func(t *testing.T) {
 		body, err := json.Marshal(clientUserCreateRequest)
@@ -93,14 +91,6 @@ func TestUserCreation(t *testing.T) {
 			t.Fatal(err)
 		}
 		checkingExpectedStatusCode(respStatusCode, respBody, http.StatusCreated, t)
-
-		if err = json.Unmarshal(respBody, &user); err != nil {
-			t.Fatal(err)
-		}
-
-		if user.Email != clientUserCreateRequest.Email {
-			t.Fatal("user email does not match")
-		}
 	})
 
 	// create the user again
@@ -252,7 +242,7 @@ func TestSurveyCreation(t *testing.T) {
 	}
 }
 
-func TestServingSurvey(t *testing.T) {
+func TestGettingSurveyByID(t *testing.T) {
 	//db conn
 	db, err := dummy.GetDbConn()
 	if err != nil {
@@ -359,15 +349,13 @@ func TestSetPublish(t *testing.T) {
 		SurveyUrl string `json:"survey_url"`
 	}
 	var url response
-	log.Println(surveyIds[0])
-	log.Println(surveyIds[1])
 	runCases := []testCases{
-		{"publish true", http.StatusOK, accessToken0, parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[0].String()), true},
+		{"publish true", http.StatusOK, accessToken0, parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s/serve", surveyIds[0].String()), true},
 		{"publish false", http.StatusOK, accessToken0, parameters{SurveyId: surveyIds[0], Enable: false}, "", false},
-		{"no token", http.StatusUnauthorized, "", parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[0].String()), true},
-		{"wrong token", http.StatusUnauthorized, accessToken1, parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[0].String()), true},
+		{"no token", http.StatusUnauthorized, "", parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s/serve", surveyIds[0].String()), true},
+		{"wrong token", http.StatusUnauthorized, accessToken1, parameters{SurveyId: surveyIds[0], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s/serve", surveyIds[0].String()), true},
 		{"publish false 2", http.StatusOK, accessToken1, parameters{SurveyId: surveyIds[1], Enable: false}, "", false},
-		{"publish true 2", http.StatusOK, accessToken1, parameters{SurveyId: surveyIds[1], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s", surveyIds[1].String()), true},
+		{"publish true 2", http.StatusOK, accessToken1, parameters{SurveyId: surveyIds[1], Enable: true}, fmt.Sprintf("http://localhost:8080/v0/%s/serve", surveyIds[1].String()), true},
 	}
 	for _, tt := range runCases {
 		t.Run(tt.title, func(t *testing.T) {

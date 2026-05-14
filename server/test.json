@@ -9,26 +9,23 @@
 			"title": "multiple",
 			"types" : "checkbox",
 			"required": true,
-			"options": {
-				"answers": ["whast", "dasd", "fsdfsfds", "lalala", "lolololo"]
-			}
+			"options": ["whast", "dasd", "fsdfsfds", "lalala", "lolololo"]
+			
 		},
 		{
 			"title": "single",
 			"types" : "radio",
 			"required": true,
-			"options": {
-				"answers": ["whast", "dasd", "fsdfsfds"]
-			}
+			"options": ["whast", "dasd", "fsdfsfds"]
+	
 
 		},
 		{
 			"title": "rating",
 			"types" : "rating",
 			"required": true,
-			"options": {
-				"answers": ["0", "5"]
-			}
+			"options": ["0", "5"]
+			
 		},
 		{
 			"title": "yes/no",
@@ -39,9 +36,8 @@
 			"title": "ranking",
 			"types" : "ranking",
 			"required": true,
-			"options": {
-				"answers": ["", "", ""]
-			}
+			"options":["", "", ""]
+			
 		},
 		{
 			"title": "open Text",

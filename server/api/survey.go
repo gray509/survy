@@ -96,10 +96,9 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /v0/survey/{surveyId}
-func (cfg *apiConfig) GetSurvey(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) GetSurveyByID(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		Survey
-		questions QuestionsMap
 	}
 	accessToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
@@ -112,6 +111,7 @@ func (cfg *apiConfig) GetSurvey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	urlSurveyId, err := uuid.Parse(r.PathValue("surveyId"))
+	log.Println("______________________" + r.PathValue("surveyId"))
 	if err != nil {
 		resWithErr(w, http.StatusNotFound, "err with uuid // GET /v0/survey/{surveyId}", err)
 		return
@@ -123,7 +123,7 @@ func (cfg *apiConfig) GetSurvey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var questions QuestionsMap
+	var questions Questions
 	err = json.Unmarshal(survey.Questions, &questions)
 
 	respondWithJSON(w, http.StatusOK, response{
@@ -134,12 +134,12 @@ func (cfg *apiConfig) GetSurvey(w http.ResponseWriter, r *http.Request) {
 			Title:          survey.Title,
 			ExpirationTime: survey.ExpirationTime.Time,
 			MaxResponse:    int(survey.MaxResponse.Int32),
+			Questions:      questions,
 		},
-		questions: questions,
 	})
 }
 
-// GET /v0/survey/
+// GET /v0/surveys/
 func (cfg *apiConfig) GetUserSurveys(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := auth.GetBearerToken(r.Header)
 	sortOrder := r.URL.Query().Get("sort")
@@ -226,12 +226,19 @@ func (cfg *apiConfig) PublishSurvey(w http.ResponseWriter, r *http.Request) {
 
 // GET /v0/survey/{surveyId}/serve
 func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		Survey
+	}
 	surveyId, err := uuid.Parse(r.PathValue("surveyId"))
 	if err != nil {
 		resWithErr(w, http.StatusBadRequest, "couldn't parse uuid", err)
 		return
 	}
-
+	survey, err := cfg.q.GetSurveyByIdIsPublish(r.Context(), surveyId)
+	if err != nil {
+		resWithErr(w, http.StatusInternalServerError, "couldn't get survey  // POST /v0/survey", err)
+		return
+	}
 	voterId := uuid.New()
 	expires := time.Now().Add(time.Minute * 10)
 	http.SetCookie(w, &http.Cookie{
@@ -242,5 +249,20 @@ func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 		Expires:  expires,
 	})
+	var questions Questions
+	err = json.Unmarshal(survey.Questions, &questions)
 
+	respondWithJSON(w, http.StatusOK, response{
+		Survey: Survey{
+			Id:             survey.ID,
+			CreatedAt:      survey.CreatedAt.Time,
+			UpdatedAt:      survey.ExpirationTime.Time,
+			Title:          survey.Title,
+			ExpirationTime: survey.ExpirationTime.Time,
+			MaxResponse:    int(survey.MaxResponse.Int32),
+			Questions:      questions,
+		},
+	})
 }
+
+// POST /v0/survey/{surveyId}/collect

@@ -9,7 +9,14 @@ import (
 )
 
 type QuestionTypes string
-type QuestionsMap map[string]interface{}
+
+type Questions []struct {
+	QuestionId uuid.UUID     `json:"question_id,omitempty"`
+	Title      string        `json:"title"`
+	Types      QuestionTypes `json:"types"`
+	IsRequired bool          `json:"required"`
+	Options    []string      `json:"options,omitempty"`
+}
 
 const (
 	Checkbox QuestionTypes = "checkbox"
@@ -53,4 +60,5 @@ type Survey struct {
 	ExpirationTime time.Time `json:"expiration_time"`
 	Identified     bool      `json:"identified"`
 	MaxResponse    int       `json:"max_response"`
+	Questions      `json:"questions"`
 }
