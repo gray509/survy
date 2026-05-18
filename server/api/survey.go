@@ -22,11 +22,10 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 		Identified     bool      `json:"identified"`
 		MaxResponse    int       `json:"max_response"`
 		Questions      []struct {
-			QuestionId uuid.UUID     `json:"question_id,omitempty"`
-			Title      string        `json:"title"`
-			Types      QuestionTypes `json:"types"`
-			IsRequired bool          `json:"required"`
-			Options    []string      `json:"options,omitempty"`
+			Title        string   `json:"title"`
+			QuestionType string   `json:"question_type"`
+			IsRequired   bool     `json:"required"`
+			Choices      []string `json:"choices,omitempty"`
 		} `json:"questions"`
 	}
 
@@ -59,31 +58,34 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// proocessing to db
-	for i := range params.Questions {
-		q := &params.Questions[i]
-		if q.Types != Checkbox && q.Types != Radio && q.Types != Rating && q.Types != YesNo && q.Types != Ranking && q.Types != OpenText {
-			resWithErr(w, http.StatusBadRequest, "Unreconized question type // POST /v0/survey", fmt.Errorf("Unknow question type %s", q.Types))
-			return
-		}
-		q.QuestionId = uuid.New()
-	}
-	questionsJson, err := json.Marshal(params.Questions)
-	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "Couldn't marshal questions // POST /v0/survey", err)
-		return
-	}
 	now := time.Now()
 	timestamptz := querieutils.Time(&now)
+	surveyId := uuid.New()
+	questions := make([]database.BulkEnterQuestionsParams, 0)
+	for _, q := range params.Questions {
+		if q.QuestionType != Checkbox && q.QuestionType != Radio && q.QuestionType != Rating && q.QuestionType != Ranking && q.QuestionType != OpenText {
+			resWithErr(w, http.StatusBadRequest, "Unreconized question type // POST /v0/survey", fmt.Errorf("Unknow question type %s", q.QuestionType))
+			return
+		}
+		questions = append(questions, database.BulkEnterQuestionsParams{
+			ID:           uuid.New(),
+			CreatedAt:    timestamptz,
+			UpdatedAt:    timestamptz,
+			Title:        q.Title,
+			QuestionType: string(q.QuestionType),
+			Choice:       q.Choices,
+			SurveyID:     surveyId,
+		})
+	}
 
-	surveyId, err := cfg.q.CreateSurvey(r.Context(), database.CreateSurveyParams{
-		ID:             uuid.New(),
+	_, err = cfg.q.CreateSurvey(r.Context(), database.CreateSurveyParams{
+		ID:             surveyId,
 		CreatedAt:      timestamptz,
 		UpdatedAt:      timestamptz,
 		Title:          params.Title,
 		UserID:         userId,
 		ExpirationTime: querieutils.Time(&params.ExpirationTime),
 		MaxResponse:    querieutils.Int4(&params.MaxResponse),
-		Questions:      (json.RawMessage)(questionsJson),
 	})
 	if err != nil {
 		resWithErr(w, http.StatusInternalServerError, "couldn't save survey to db // POST /v0/survey", err)
@@ -98,7 +100,8 @@ func (cfg *apiConfig) CreateSurvey(w http.ResponseWriter, r *http.Request) {
 // GET /v0/survey/{surveyId}
 func (cfg *apiConfig) GetSurveyByID(w http.ResponseWriter, r *http.Request) {
 	type response struct {
-		Survey
+		Survey    Survey      `json:"survey"`
+		Questions []Questions `json:"Questions"`
 	}
 	accessToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
@@ -111,7 +114,7 @@ func (cfg *apiConfig) GetSurveyByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	urlSurveyId, err := uuid.Parse(r.PathValue("surveyId"))
-	log.Println("______________________" + r.PathValue("surveyId"))
+
 	if err != nil {
 		resWithErr(w, http.StatusNotFound, "err with uuid // GET /v0/survey/{surveyId}", err)
 		return
@@ -123,9 +126,23 @@ func (cfg *apiConfig) GetSurveyByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var questions Questions
-	err = json.Unmarshal(survey.Questions, &questions)
-
+	dbquestions, err := cfg.q.GetQuestionsFromSurveyId(r.Context(), survey.ID)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error retrieving questions // GET /v0/survey/{surveyId}", err)
+		return
+	}
+	questions := make([]Questions, 0)
+	for _, q := range dbquestions {
+		questions = append(questions, Questions{
+			QuestionId:   q.ID,
+			CreatedAt:    q.CreatedAt.Time,
+			UpdatedAt:    q.UpdatedAt.Time,
+			Title:        q.Title,
+			QuestionType: q.QuestionType,
+			IsRequired:   q.IsRequired,
+			Choice:       q.Choice,
+		})
+	}
 	respondWithJSON(w, http.StatusOK, response{
 		Survey: Survey{
 			Id:             survey.ID,
@@ -134,8 +151,8 @@ func (cfg *apiConfig) GetSurveyByID(w http.ResponseWriter, r *http.Request) {
 			Title:          survey.Title,
 			ExpirationTime: survey.ExpirationTime.Time,
 			MaxResponse:    int(survey.MaxResponse.Int32),
-			Questions:      questions,
 		},
+		Questions: questions,
 	})
 }
 
@@ -227,7 +244,9 @@ func (cfg *apiConfig) PublishSurvey(w http.ResponseWriter, r *http.Request) {
 // GET /v0/survey/{surveyId}/serve
 func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 	type response struct {
-		Survey
+		Survey    Survey      `json:"survey"`
+		Questions []Questions `json:"Questions"`
+		token     string
 	}
 	surveyId, err := uuid.Parse(r.PathValue("surveyId"))
 	if err != nil {
@@ -236,22 +255,29 @@ func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 	}
 	survey, err := cfg.q.GetSurveyByIdIsPublish(r.Context(), surveyId)
 	if err != nil {
-		resWithErr(w, http.StatusInternalServerError, "couldn't get survey  // POST /v0/survey", err)
+		resWithErr(w, http.StatusInternalServerError, "couldn't get survey  // GET /v0/survey/{surveyId}/serve", err)
 		return
 	}
 	voterId := uuid.New()
-	expires := time.Now().Add(time.Minute * 10)
-	http.SetCookie(w, &http.Cookie{
-		Name:     "voter_id",
-		Value:    voterId.String(),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		Expires:  expires,
-	})
-	var questions Questions
-	err = json.Unmarshal(survey.Questions, &questions)
+	jwt, err := auth.MakeJWT(voterId, cfg.jwtSecret, time.Minute*10)
 
+	dbquestions, err := cfg.q.GetQuestionsFromSurveyId(r.Context(), survey.ID)
+	if err != nil {
+		resWithErr(w, http.StatusUnauthorized, "Error retrieving questions // GET /v0/survey/{surveyId}/serve", err)
+		return
+	}
+	questions := make([]Questions, 0)
+	for _, q := range dbquestions {
+		questions = append(questions, Questions{
+			QuestionId:   q.ID,
+			CreatedAt:    q.CreatedAt.Time,
+			UpdatedAt:    q.UpdatedAt.Time,
+			Title:        q.Title,
+			QuestionType: q.QuestionType,
+			IsRequired:   q.IsRequired,
+			Choice:       q.Choice,
+		})
+	}
 	respondWithJSON(w, http.StatusOK, response{
 		Survey: Survey{
 			Id:             survey.ID,
@@ -260,9 +286,14 @@ func (cfg *apiConfig) ServeSurvey(w http.ResponseWriter, r *http.Request) {
 			Title:          survey.Title,
 			ExpirationTime: survey.ExpirationTime.Time,
 			MaxResponse:    int(survey.MaxResponse.Int32),
-			Questions:      questions,
 		},
+		Questions: questions,
+		token:     jwt,
 	})
 }
 
 // POST /v0/survey/{surveyId}/collect
+func (cfg *apiConfig) CollectSurvey(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+	}
+}

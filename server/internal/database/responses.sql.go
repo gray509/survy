@@ -23,7 +23,7 @@ VALUES (
     $5,
     $6
 )
-RETURNING id, created_at, updated_at, response, voter_id, survey_id
+RETURNING id, created_at, updated_at, response, voter_id, survey_id, question_id, choice
 `
 
 type CreateResponseParams struct {
@@ -52,6 +52,8 @@ func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) 
 		&i.Response,
 		&i.VoterID,
 		&i.SurveyID,
+		&i.QuestionID,
+		&i.Choice,
 	)
 	return i, err
 }

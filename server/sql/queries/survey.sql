@@ -1,5 +1,5 @@
 -- name: CreateSurvey :one
-INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response, questions)
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response)
 VALUES (
     $1,
     $2,
@@ -7,13 +7,12 @@ VALUES (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 )
 RETURNING id;
 
 -- name: BulkCreateSurvey :copyfrom
-INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response, questions)
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response)
 VALUES (
     $1,
     $2,
@@ -21,8 +20,7 @@ VALUES (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 );
 -- name: GetSurveyByIdUserId :one
 Select *

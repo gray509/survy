@@ -7,41 +7,32 @@
 	"questions": [
 		{
 			"title": "multiple",
-			"types" : "checkbox",
+			"question_type" : "checkbox",
 			"required": true,
-			"options": ["whast", "dasd", "fsdfsfds", "lalala", "lolololo"]
-			
+			"choices": ["whast", "dasd", "fsdfsfds", "lalala", "lolololo"]
 		},
 		{
 			"title": "single",
-			"types" : "radio",
+			"question_type" : "radio",
 			"required": true,
-			"options": ["whast", "dasd", "fsdfsfds"]
-	
-
+			"choices": ["whast", "dasd", "fsdfsfds"]
 		},
 		{
 			"title": "rating",
-			"types" : "rating",
+			"question_type" : "rating",
 			"required": true,
-			"options": ["0", "5"]
-			
-		},
-		{
-			"title": "yes/no",
-			"types" : "yes/no",
-			"required": true
+			"choices": ["0", "5"]
 		},
 		{
 			"title": "ranking",
-			"types" : "ranking",
+			"question_type" : "ranking",
 			"required": true,
-			"options":["", "", ""]
+			"choices":["", "", ""]
 			
 		},
 		{
 			"title": "open Text",
-			"types" : "open",
+			"question_type" : "open",
 			"required": true
 		}
 	]

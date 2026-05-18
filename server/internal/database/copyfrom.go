@@ -36,7 +36,6 @@ func (r iteratorForBulkCreateSurvey) Values() ([]interface{}, error) {
 		r.rows[0].UserID,
 		r.rows[0].ExpirationTime,
 		r.rows[0].MaxResponse,
-		r.rows[0].Questions,
 	}, nil
 }
 
@@ -45,7 +44,7 @@ func (r iteratorForBulkCreateSurvey) Err() error {
 }
 
 func (q *Queries) BulkCreateSurvey(ctx context.Context, arg []BulkCreateSurveyParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"surveys"}, []string{"id", "created_at", "updated_at", "title", "user_id", "expiration_time", "max_response", "questions"}, &iteratorForBulkCreateSurvey{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"surveys"}, []string{"id", "created_at", "updated_at", "title", "user_id", "expiration_time", "max_response"}, &iteratorForBulkCreateSurvey{rows: arg})
 }
 
 // iteratorForBulkCreateUser implements pgx.CopyFromSource.
@@ -82,4 +81,43 @@ func (r iteratorForBulkCreateUser) Err() error {
 
 func (q *Queries) BulkCreateUser(ctx context.Context, arg []BulkCreateUserParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"users"}, []string{"id", "created_at", "updated_at", "email", "password"}, &iteratorForBulkCreateUser{rows: arg})
+}
+
+// iteratorForBulkEnterQuestions implements pgx.CopyFromSource.
+type iteratorForBulkEnterQuestions struct {
+	rows                 []BulkEnterQuestionsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkEnterQuestions) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkEnterQuestions) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].CreatedAt,
+		r.rows[0].UpdatedAt,
+		r.rows[0].Title,
+		r.rows[0].QuestionType,
+		r.rows[0].Choice,
+		r.rows[0].IsRequired,
+		r.rows[0].SurveyID,
+	}, nil
+}
+
+func (r iteratorForBulkEnterQuestions) Err() error {
+	return nil
+}
+
+func (q *Queries) BulkEnterQuestions(ctx context.Context, arg []BulkEnterQuestionsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"questions"}, []string{"id", "created_at", "updated_at", "title", "question_type", "choice", "is_required", "survey_id"}, &iteratorForBulkEnterQuestions{rows: arg})
 }

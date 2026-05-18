@@ -8,23 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type QuestionTypes string
-
-type Questions []struct {
-	QuestionId uuid.UUID     `json:"question_id,omitempty"`
-	Title      string        `json:"title"`
-	Types      QuestionTypes `json:"types"`
-	IsRequired bool          `json:"required"`
-	Options    []string      `json:"options,omitempty"`
-}
-
 const (
-	Checkbox QuestionTypes = "checkbox"
-	Radio    QuestionTypes = "radio"
-	Rating   QuestionTypes = "rating"
-	YesNo    QuestionTypes = "yes/no"
-	Ranking  QuestionTypes = "ranking"
-	OpenText QuestionTypes = "open"
+	Checkbox string = "checkbox"
+	Radio    string = "radio"
+	Rating   string = "rating"
+	Ranking  string = "ranking"
+	OpenText string = "open"
 )
 
 type apiConfig struct {
@@ -60,5 +49,14 @@ type Survey struct {
 	ExpirationTime time.Time `json:"expiration_time"`
 	Identified     bool      `json:"identified"`
 	MaxResponse    int       `json:"max_response"`
-	Questions      `json:"questions"`
+}
+
+type Questions struct {
+	QuestionId   uuid.UUID `json:"question_id,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Title        string    `json:"title"`
+	QuestionType string    `json:"types"`
+	IsRequired   bool      `json:"required"`
+	Choice       []string  `json:"options,omitempty"`
 }

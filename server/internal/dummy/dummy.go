@@ -20,16 +20,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type QuestionTypes string
-type Options map[string]interface{}
-
 const (
-	Checkbox QuestionTypes = "checkbox"
-	Radio    QuestionTypes = "radio"
-	Rating   QuestionTypes = "rating"
-	YesNo    QuestionTypes = "yes/no"
-	Ranking  QuestionTypes = "ranking"
-	OpenText QuestionTypes = "open"
+	Checkbox string = "checkbox"
+	Radio    string = "radio"
+	Rating   string = "rating"
+	Ranking  string = "ranking"
+	OpenText string = "open"
 )
 
 type testJson struct {
@@ -39,11 +35,10 @@ type testJson struct {
 		Identified     bool      `json:"identified"`
 		MaxResponse    int       `json:"max_response"`
 		Questions      []struct {
-			QuestionId uuid.UUID     `json:"question_id,omitempty"`
-			Title      string        `json:"title"`
-			Types      QuestionTypes `json:"types"`
-			IsRequired bool          `json:"required"`
-			Options    []string      `json:"options,omitempty"`
+			Title        string   `json:"title"`
+			QuestionType string   `json:"question_type"`
+			IsRequired   bool     `json:"required"`
+			Choices      []string `json:"choices,omitempty"`
 		} `json:"questions"`
 	} `json:"r_create_Survey"`
 }
@@ -145,23 +140,11 @@ func CreateSurvey(qtx *database.Queries, users []database.BulkCreateUserParams, 
 		t.Fatal(err)
 	}
 
-	for i := range testjson.ClientCreateSurvey.Questions {
-		q := &testjson.ClientCreateSurvey.Questions[i]
-		if q.Types != Checkbox && q.Types != Radio && q.Types != Rating && q.Types != YesNo && q.Types != Ranking && q.Types != OpenText {
-			t.Fatal(fmt.Errorf("unknown question type"))
-		}
-		q.QuestionId = uuid.New()
-	}
-
-	questionsJson, err := json.Marshal(testjson.ClientCreateSurvey.Questions)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	now := time.Now()
 	timestamptz := querieutils.Time(&now)
 	surveyIds := make([]uuid.UUID, 0)
 	surveys := make([]database.BulkCreateSurveyParams, 0)
+	questions := make([]database.BulkEnterQuestionsParams, 0)
 
 	for i, user := range users {
 		surveyIds = append(surveyIds, uuid.New())
@@ -173,9 +156,22 @@ func CreateSurvey(qtx *database.Queries, users []database.BulkCreateUserParams, 
 			UserID:         user.ID,
 			ExpirationTime: querieutils.Time(&testjson.ClientCreateSurvey.ExpirationTime),
 			MaxResponse:    querieutils.Int4(&testjson.ClientCreateSurvey.MaxResponse),
-			Questions:      (json.RawMessage)(questionsJson),
 		})
 
+		for _, q := range testjson.ClientCreateSurvey.Questions {
+			if q.QuestionType != Checkbox && q.QuestionType != Radio && q.QuestionType != Rating && q.QuestionType != Ranking && q.QuestionType != OpenText {
+				t.Fatal(fmt.Errorf("unknown question type, %s", q.QuestionType))
+			}
+			questions = append(questions, database.BulkEnterQuestionsParams{
+				ID:           uuid.New(),
+				CreatedAt:    timestamptz,
+				UpdatedAt:    timestamptz,
+				Title:        q.Title,
+				QuestionType: string(q.QuestionType),
+				Choice:       q.Choices,
+				SurveyID:     surveyIds[i],
+			})
+		}
 	}
 
 	_, err = qtx.BulkCreateSurvey(t.Context(), surveys)

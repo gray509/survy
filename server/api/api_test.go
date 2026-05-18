@@ -21,11 +21,10 @@ type testJson struct {
 		Identified     bool      `json:"identified"`
 		MaxResponse    int       `json:"max_response"`
 		Questions      []struct {
-			QuestionId uuid.UUID     `json:"question_id,omitempty"`
-			Title      string        `json:"title"`
-			Types      QuestionTypes `json:"types"`
-			IsRequired bool          `json:"required"`
-			Options    []string      `json:"options,omitempty"`
+			Title        string   `json:"title"`
+			QuestionType string   `json:"question_type"`
+			IsRequired   bool     `json:"required"`
+			Choices      []string `json:"choices,omitempty"`
 		} `json:"questions"`
 	} `json:"r_create_Survey"`
 }
@@ -216,7 +215,7 @@ func TestSurveyCreation(t *testing.T) {
 	for _, tt := range runCases {
 		t.Run(tt.title, func(t *testing.T) {
 			if tt.badTypes {
-				testjson.ClientCreateSurvey.Questions[0].Types = "bad"
+				testjson.ClientCreateSurvey.Questions[0].QuestionType = "bad"
 			}
 			if tt.setNoQuestions {
 				testjson.ClientCreateSurvey.Questions = nil

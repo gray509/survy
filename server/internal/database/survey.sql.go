@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -22,11 +21,10 @@ type BulkCreateSurveyParams struct {
 	UserID         uuid.UUID
 	ExpirationTime pgtype.Timestamptz
 	MaxResponse    pgtype.Int4
-	Questions      json.RawMessage
 }
 
 const createSurvey = `-- name: CreateSurvey :one
-INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response, questions)
+INSERT INTO surveys (id, created_at, updated_at, title, user_id, expiration_time, max_response)
 VALUES (
     $1,
     $2,
@@ -34,8 +32,7 @@ VALUES (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 )
 RETURNING id
 `
@@ -48,7 +45,6 @@ type CreateSurveyParams struct {
 	UserID         uuid.UUID
 	ExpirationTime pgtype.Timestamptz
 	MaxResponse    pgtype.Int4
-	Questions      json.RawMessage
 }
 
 func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (uuid.UUID, error) {
@@ -60,7 +56,6 @@ func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (uui
 		arg.UserID,
 		arg.ExpirationTime,
 		arg.MaxResponse,
-		arg.Questions,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)
@@ -68,7 +63,7 @@ func (q *Queries) CreateSurvey(ctx context.Context, arg CreateSurveyParams) (uui
 }
 
 const getAllUserSurveys = `-- name: GetAllUserSurveys :many
-Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published, questions
+Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published
 FROM surveys
 WHERE user_id = $1
 ORDER BY updated_at asc
@@ -92,7 +87,6 @@ func (q *Queries) GetAllUserSurveys(ctx context.Context, userID uuid.UUID) ([]Su
 			&i.ExpirationTime,
 			&i.MaxResponse,
 			&i.IsPublished,
-			&i.Questions,
 		); err != nil {
 			return nil, err
 		}
@@ -105,7 +99,7 @@ func (q *Queries) GetAllUserSurveys(ctx context.Context, userID uuid.UUID) ([]Su
 }
 
 const getSurveyByIdIsPublish = `-- name: GetSurveyByIdIsPublish :one
-Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published, questions
+Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published
 FROM surveys
 WHERE surveys.id = $1 AND is_published
 `
@@ -122,13 +116,12 @@ func (q *Queries) GetSurveyByIdIsPublish(ctx context.Context, id uuid.UUID) (Sur
 		&i.ExpirationTime,
 		&i.MaxResponse,
 		&i.IsPublished,
-		&i.Questions,
 	)
 	return i, err
 }
 
 const getSurveyByIdUserId = `-- name: GetSurveyByIdUserId :one
-Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published, questions
+Select id, user_id, created_at, updated_at, title, expiration_time, max_response, is_published
 FROM surveys
 WHERE surveys.id = $1 AND surveys.user_id = $2
 `
@@ -150,7 +143,6 @@ func (q *Queries) GetSurveyByIdUserId(ctx context.Context, arg GetSurveyByIdUser
 		&i.ExpirationTime,
 		&i.MaxResponse,
 		&i.IsPublished,
-		&i.Questions,
 	)
 	return i, err
 }
