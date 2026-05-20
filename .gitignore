@@ -1,7 +1,8 @@
 .env*
 research
 hold
-
+client
+test.json
 # Logs
 logs
 *.log
