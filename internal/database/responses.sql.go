@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createResponse = `-- name: CreateResponse :one
+const createResponse = `-- name: CreateResponse :exec
 INSERT INTO responses (id, created_at, updated_at, response, survey_id, voter_id)
 VALUES (
     $1,
@@ -23,7 +23,6 @@ VALUES (
     $5,
     $6
 )
-RETURNING id, created_at, updated_at, response, voter_id, survey_id, question_id, choice
 `
 
 type CreateResponseParams struct {
@@ -35,8 +34,8 @@ type CreateResponseParams struct {
 	VoterID   uuid.UUID
 }
 
-func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) (Response, error) {
-	row := q.db.QueryRow(ctx, createResponse,
+func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) error {
+	_, err := q.db.Exec(ctx, createResponse,
 		arg.ID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -44,16 +43,5 @@ func (q *Queries) CreateResponse(ctx context.Context, arg CreateResponseParams) 
 		arg.SurveyID,
 		arg.VoterID,
 	)
-	var i Response
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Response,
-		&i.VoterID,
-		&i.SurveyID,
-		&i.QuestionID,
-		&i.Choice,
-	)
-	return i, err
+	return err
 }

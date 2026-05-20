@@ -29,18 +29,6 @@ type testJson struct {
 	} `json:"r_create_Survey"`
 }
 
-type r_email_pass struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-type resp_login struct {
-	Id          uuid.UUID `json:"id"`
-	CreateAt    time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Email       string    `json:"email"`
-	AccessToken string    `json:"access_token"`
-}
-
 func checkingExpectedStatusCode(statusCode int, respBody []byte, expectedCode int, t *testing.T) {
 	if statusCode != expectedCode {
 		type errorResponse struct {
@@ -70,6 +58,11 @@ func sendRequest(req *http.Request) (*http.Response, int, []byte, error) {
 	return resp, resp.StatusCode, respBody, nil
 }
 func TestUserCreation(t *testing.T) {
+	type r_email_pass struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
 	clientUserCreateRequest := r_email_pass{
 		Email:    "user-1@testsurvy.com",
 		Password: "pass",
@@ -112,6 +105,18 @@ func TestUserCreation(t *testing.T) {
 }
 
 func TestLoginFlow(t *testing.T) {
+	type r_email_pass struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	type resp_login struct {
+		Id          uuid.UUID `json:"id"`
+		CreateAt    time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
+		Email       string    `json:"email"`
+		AccessToken string    `json:"access_token"`
+	}
+
 	db, err := dummy.GetDbConn()
 	if err != nil {
 		t.Fatal()
